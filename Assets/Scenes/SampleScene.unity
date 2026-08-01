@@ -1137,7 +1137,6 @@ GameObject:
   m_Component:
   - component: {fileID: 375157140}
   - component: {fileID: 375157146}
-  - component: {fileID: 375157145}
   - component: {fileID: 375157144}
   - component: {fileID: 375157139}
   - component: {fileID: 375157141}
@@ -1331,25 +1330,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2060bc42975c824b9dddd368a65954c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FarmingNPC
-  gender: 0
+  gender: 1
   moveSpeed: 3
   femaleSpawnRateAttribute: 0
   characterName: 
---- !u!114 &375157145
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 375157138}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ae7cc1d561407149b51f7762db0aa47, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ArrowHitHandler
-  retreatMoveSpeed: 1.5
-  retreatStopDistance: 0.5
-  blacksmithPosition: {fileID: 0}
 --- !u!114 &375157146
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3509,21 +3493,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &793181392
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 793181378}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ae7cc1d561407149b51f7762db0aa47, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ArrowHitHandler
-  retreatMoveSpeed: 1.5
-  retreatStopDistance: 0.5
-  blacksmithPosition: {fileID: 20918970}
 --- !u!1 &812494777
 GameObject:
   m_ObjectHideFlags: 0
@@ -7220,12 +7189,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1490140332}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 932c55d335934ba40bf7aeb065bc2876, type: 3}
+  m_Script: {fileID: 11500000, guid: 00fa85292f4e2a3409dffbd40280ce50, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CharacterHealth
-  gender: Male
-  isPlayer: 0
-  isControllable: 0
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
+  maxHealth: 3
+  currentHealth: 0
   isDead: 0
   shakeDuration: 0.5
   shakeMagnitude: 0.1
@@ -16881,12 +16849,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 2035053128}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 932c55d335934ba40bf7aeb065bc2876, type: 3}
+  m_Script: {fileID: 11500000, guid: 00fa85292f4e2a3409dffbd40280ce50, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CharacterHealth
-  gender: Male
-  isPlayer: 0
-  isControllable: 0
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
+  maxHealth: 3
+  currentHealth: 0
   isDead: 0
   shakeDuration: 0.5
   shakeMagnitude: 0.1
@@ -17202,6 +17169,14 @@ PrefabInstance:
     - target: {fileID: 1676887774896281952, guid: 9e37604ef0d8d214ba9e005df91026cb, type: 3}
       propertyPath: m_Name
       value: "\u7537005_\u76D7\u8CCA_1"
+      objectReference: {fileID: 0}
+    - target: {fileID: 2739907033864951677, guid: 9e37604ef0d8d214ba9e005df91026cb, type: 3}
+      propertyPath: moveSpeed
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2739907033864951677, guid: 9e37604ef0d8d214ba9e005df91026cb, type: 3}
+      propertyPath: interactKey
+      value: 102
       objectReference: {fileID: 0}
     - target: {fileID: 3174487954302195057, guid: 9e37604ef0d8d214ba9e005df91026cb, type: 3}
       propertyPath: m_Sprite
@@ -17583,9 +17558,6 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 7872206535440681528, guid: 532f725e775a0794ba06afaed6c16626, type: 3}
-      insertIndex: 1
-      addedObject: {fileID: 793181392}
     - targetCorrespondingSourceObject: {fileID: 7872206535440681528, guid: 532f725e775a0794ba06afaed6c16626, type: 3}
       insertIndex: -1
       addedObject: {fileID: 793181385}

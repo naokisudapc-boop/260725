@@ -540,8 +540,9 @@ public class NPCPlayerHelper : MonoBehaviour
         // 最終位置リセット
         transform.localPosition = originalLocalPosition;
 
-        // 4. すべての演出終了後、次のキャラクターへ切り替える
-        if (GameManager.Instance != null)
+        // 4. 自分が操作キャラクター（後継として選出された状態）だった場合のみ、
+        // 次のキャラクターへ切り替える。自律AIのまま死んだ場合は交代しない。
+        if (isSuccessor && GameManager.Instance != null)
         {
             GameManager.Instance.ReplacePlayer(this.gameObject);
         }

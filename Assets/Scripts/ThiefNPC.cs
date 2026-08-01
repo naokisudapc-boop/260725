@@ -36,6 +36,12 @@ public class ThiefNPC : FarmingNPC
     [Header("Combat References")]
     [SerializeField] private Hammer hammerComponent;
 
+    [Header("Command Key Settings")]
+    [Tooltip("味方NPCへの攻撃指示キー（NPCSpawnerのinteractKeyと重複しないこと）")]
+    [SerializeField] private KeyCode attackCommandKey = KeyCode.Q;
+    [Tooltip("攻撃指示のキャンセルキー")]
+    [SerializeField] private KeyCode cancelCommandKey = KeyCode.X;
+
     private bool isMining = false;
     private Vector3Int minedGridPos;
     private Transform targetGhost;
@@ -57,8 +63,20 @@ public class ThiefNPC : FarmingNPC
 
     private bool IsActingIndependently => isMining || targetGhost != null || isGatheringToPlayer || isRetreating; 
 
-    void Awake()
+    protected override void Awake()
     {
+        base.Awake();
+
+        // FarmingNPC.Awake() applies linearDamping = 10 for the (position-driven)
+        // watering NPCs. ThiefNPC moves via rb.linearVelocity directly (sync/combat/
+        // gather/retreat), so that drag would fight the assigned velocity every
+        // physics step and make movement noticeably slower than moveSpeed implies.
+        Rigidbody2D thiefRb = GetComponent<Rigidbody2D>();
+        if (thiefRb != null)
+        {
+            thiefRb.linearDamping = 0f;
+        }
+
         if (!gameObject.CompareTag("Player"))
         {
             gameObject.tag = "Ally";
@@ -85,8 +103,9 @@ public class ThiefNPC : FarmingNPC
         FindRetreatTarget();
     }
 
-    void Start()
+    protected override void Start()
     {
+        base.Start();
         FindPlayerTransform();
     }
 
@@ -105,12 +124,12 @@ public class ThiefNPC : FarmingNPC
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.E))
+        if (Input.GetKeyDown(attackCommandKey))
         {
             CommandAttack();
         }
 
-        if (Input.GetKeyDown(KeyCode.X))
+        if (Input.GetKeyDown(cancelCommandKey))
         {
             CancelAttackCommand();
         }

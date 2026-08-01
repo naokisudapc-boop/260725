@@ -43,10 +43,20 @@ public class CharacterHealth : MonoBehaviour
         }
     }
 
+    // Die() が isPlayer を false にリセットしてしまう前に、死亡時点で
+    // 自分が操作キャラクターだったかどうかを覚えておくためのフラグ。
+    // DeathAnimationRoutine 側はこれを見て、操作キャラクター交代が
+    // 必要かどうかを判断する。
+    private bool wasPlayerOnDeath = false;
+
     public void Die()
     {
         if (isDead) return;
         isDead = true;
+
+        // 交代処理の要否判定用に、死亡時点で操作キャラクターだったかを保存
+        wasPlayerOnDeath = isPlayer;
+
         isControllable = false;
         isPlayer = false;
 
@@ -128,8 +138,9 @@ public class CharacterHealth : MonoBehaviour
         // 最終位置リセット
         transform.localPosition = originalLocalPosition;
 
-        // 4. すべての演出終了後、次のキャラクターへ切り替える
-        if (GameManager.Instance != null)
+        // 4. 操作キャラクターが死亡した場合のみ、次のキャラクターへ切り替える。
+        // 味方NPC（未操作）が死んだだけでは操作キャラクターは変更しない。
+        if (wasPlayerOnDeath && GameManager.Instance != null)
         {
             GameManager.Instance.ReplacePlayer(this);
         }

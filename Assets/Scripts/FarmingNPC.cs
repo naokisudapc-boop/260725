@@ -40,7 +40,7 @@ public class FarmingNPC : MonoBehaviour
     // 外部（PlayerFarming など）からこの NPC に新しい水やりを割り当てられるか
     public bool CanAcceptNewTask => !isWorking && !isFinished && !isLockedToFarm;
 
-    void Awake()
+    protected virtual void Awake()
     {
         // Ensure this NPC is counted as an ally by the population system.
         // Set the tag as early as possible (before GameManager's delayed count)
@@ -65,7 +65,7 @@ public class FarmingNPC : MonoBehaviour
         rb.freezeRotation = true;
     }
 
-    void Start()
+    protected virtual void Start()
     {
         animator = GetComponent<Animator>();
         if (animator != null)
