@@ -25,10 +25,31 @@ public class NPCPlayerHelper : MonoBehaviour
     [SerializeField] private string _treeTag = "Tree";    // 伐採対象のタグ
     [SerializeField] private string _treesRootName = "Trees"; // 木をまとめる親オブジェクト名
 
+    [Header("Combat Settings (Ally Auto-Defense)")]
+    [Tooltip("周囲の敵（Ghost/Enemy）を索敵する範囲。ThiefNPCのnormalDetectionRange相当")]
+    [SerializeField] private float _combatDetectionRange = 5.0f;
+    [SerializeField] private float _attackRange = 1.5f;
+    [SerializeField] private float _combatMoveSpeed = 2.5f;
+    [SerializeField] private float _attackCooldown = 1.2f;
+
+    [Header("Attack Command Settings")]
+    [Tooltip("味方への攻撃指示キー（ThiefNPCのattackCommandKeyと同じQキーを共有）")]
+    [SerializeField] private KeyCode _attackCommandKey = KeyCode.Q;
+
     private Rigidbody2D _rb;
     private Animator _anim;
     private Vector2 _moveInput;
     private TMP_Text _nameLabel;
+
+    // 戦闘用：斧（WeponHolder/ono）に自動アタッチされる Hammer コンポーネント
+    private Hammer _hammerComponent;
+    private Transform _targetEnemy;
+    private float _nextAttackTime = 0f;
+
+    // Qキーでの攻撃指示に関する状態（ThiefNPC.CommandAttack()と同じ考え方）
+    private bool _isCommandedToAttack = false;
+    private bool _isGatheringToPlayer = false;
+    private Transform _playerTransform;
 
     // プレイヤー死亡時に後継キャラクター（新しい操作対象）として選出されたかを示すフラグ
     [HideInInspector] public bool isSuccessor = false;
@@ -87,6 +108,9 @@ public class NPCPlayerHelper : MonoBehaviour
             if (ono != null) ono.gameObject.SetActive(true);
         }
 
+        // 戦闘（自衛AI／操作キャラクター昇格時の斧攻撃）に使う Hammer コンポーネントを用意
+        EnsureHammerWeapon();
+
         Debug.Log($"[NPCPlayerHelper] Start: Animator {(_anim != null ? "取得OK" : "が見つかりません！")} (name={gameObject.name})");
 
         // Generate and display name
@@ -100,11 +124,13 @@ public class NPCPlayerHelper : MonoBehaviour
         // ★誕生直後から自動で伐採モードを開始（指示待ちなし）
         StartLumberAI();
 
-        // 男性の場合は操作切り替えシステム（プレイヤー死亡時の交代）が検知できるよう "Player" タグを設定
-        if (gender == Gender.Male)
-        {
-            gameObject.tag = "Player";
-        }
+        // 注意：以前はここで gender == Male の場合に強制的に tag = "Player" を
+        // 設定していたが、これだと味方の男性NPCヘルパーが複数いる場合に全員が
+        // 同時に "Player" タグを持つことになり、FindWithTag("Player") を使う
+        // 各所（追従・索敵など）が実際に操作中でないNPCを誤検出する原因になる。
+        // また CharacterHealth.isPlayer と食い違うため削除した。
+        // "Player" タグは GameManager.SelectNextPlayer が実際に操作対象へ
+        // 昇格させたときにのみ設定される。
     }
 
     /// <summary>
@@ -145,14 +171,15 @@ public class NPCPlayerHelper : MonoBehaviour
         _fixedZ = transform.position.z;
         KeepZFixed();
 
+        // 戦闘に使う Hammer コンポーネントを用意（Startで未生成だった場合の保険も兼ねる）
+        EnsureHammerWeapon();
+
         // ★Init 完了直後も自動で伐採モードを開始
         StartLumberAI();
 
-        // 男性の場合は操作切り替えシステム（プレイヤー死亡時の交代）が検知できるよう "Player" タグを設定
-        if (gender == Gender.Male)
-        {
-            gameObject.tag = "Player";
-        }
+        // 注意：tag を強制的に "Player" にする処理は Start() 側と同じ理由で削除。
+        // GameManager.SelectNextPlayer が実際に操作対象を昇格させる際に
+        // 自分でタグを "Player" に設定するので、ここでは何もしない。
     }
 
     private bool HasParameter(Animator anim, string paramName)
@@ -274,7 +301,24 @@ public class NPCPlayerHelper : MonoBehaviour
             KeepZFixed();
 
             Transform treeToCut = _targetTree;
-            yield return new WaitForSeconds(_chopDuration);
+
+            // 伐採演出：_chopDuration の間、斧（Hammer）を繰り返し振る
+            float chopStartTime = Time.time;
+            while (Time.time - chopStartTime < _chopDuration)
+            {
+                if (_hammerComponent != null)
+                {
+                    // SwingAndSpinHammer は1回あたり約0.3秒（Hammer.cs側で定義）。
+                    // それを完了まで待ってから次の振りへ移る＝連続で振り続ける演出になる。
+                    yield return StartCoroutine(_hammerComponent.SwingAndSpinHammer());
+                }
+                else
+                {
+                    // Hammer が見つからない場合は従来通りただ待つだけにフォールバック
+                    yield return new WaitForSeconds(_chopDuration);
+                    break;
+                }
+            }
 
             // 4. 木を破棄（TreeController が GameManager の木材を加算）
             if (treeToCut != null)
@@ -375,11 +419,246 @@ public class NPCPlayerHelper : MonoBehaviour
         transform.position = p;
     }
 
+    // ============================================================
+    //  戦闘AI（ThiefNPC同様の自衛索敵・攻撃）
+    // ============================================================
+
+    /// <summary>
+    /// WeponHolder/ono に Hammer コンポーネント（と攻撃判定用の Collider2D）を
+    /// 自動で用意する。ThiefNPC は既にプレハブ上で Hammer を持っているが、
+    /// NPCPlayerHelper 側にはまだ無いため、ここで補完する。
+    /// これにより、自衛AIの攻撃（hammerComponent.ExecuteAttack）に加えて、
+    /// 操作キャラクターへ昇格した際に GameManager.SelectNextPlayer が行う
+    /// GetComponentInChildren&lt;Hammer&gt;() 経由の PlayerAttack への武器設定も
+    /// 自動的に機能するようになる。
+    /// </summary>
+    private void EnsureHammerWeapon()
+    {
+        Transform ono = transform.Find("WeponHolder/ono");
+        if (ono == null) return;
+
+        // Hammer.Awake() は Collider2D の存在を前提にしているため、
+        // Hammer をアタッチする前に Collider2D を用意しておく
+        Collider2D onoCollider = ono.GetComponent<Collider2D>();
+        if (onoCollider == null)
+        {
+            CircleCollider2D circle = ono.gameObject.AddComponent<CircleCollider2D>();
+            circle.isTrigger = true;
+            circle.radius = 0.4f;
+        }
+
+        _hammerComponent = ono.GetComponent<Hammer>();
+        if (_hammerComponent == null)
+        {
+            _hammerComponent = ono.gameObject.AddComponent<Hammer>();
+        }
+    }
+
+    /// <summary>
+    /// 周囲の敵（Ghost / Enemy タグ）を索敵する。ThiefNPC.FindGhost() と同じロジック。
+    /// </summary>
+    private void FindNearbyEnemy()
+    {
+        float minDistance = _combatDetectionRange;
+        _targetEnemy = null;
+
+        GameObject[] ghosts = GameObject.FindGameObjectsWithTag("Ghost");
+        foreach (GameObject g in ghosts)
+        {
+            var ghostHealth = g.GetComponent<CharacterHealth>();
+            if (ghostHealth != null && ghostHealth.isDead) continue;
+            float dist = Vector2.Distance(transform.position, g.transform.position);
+            if (dist < minDistance)
+            {
+                minDistance = dist;
+                _targetEnemy = g.transform;
+            }
+        }
+
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (GameObject e in enemies)
+        {
+            var enemyHealth = e.GetComponent<EnemyHealth>();
+            if (enemyHealth != null && enemyHealth.isDead) continue;
+            float dist = Vector2.Distance(transform.position, e.transform.position);
+            if (dist < minDistance)
+            {
+                minDistance = dist;
+                _targetEnemy = e.transform;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 敵に接近し、射程内に入ったら斧（Hammer）で攻撃する。ThiefNPC.ExecuteCombatAI() 相当。
+    /// </summary>
+    private void ExecuteCombatAI()
+    {
+        if (_targetEnemy == null) return;
+
+        float distance = Vector2.Distance(transform.position, _targetEnemy.position);
+        Vector3 moveDirection = ((Vector3)_targetEnemy.position - transform.position).normalized;
+
+        if (distance > _attackRange)
+        {
+            if (_rb != null) _rb.linearVelocity = Vector2.zero;
+            Vector3 nextPosition = Vector2.MoveTowards(transform.position, _targetEnemy.position, _combatMoveSpeed * Time.deltaTime);
+            transform.position = nextPosition;
+            UpdateCombatAnimator(moveDirection, _combatMoveSpeed);
+        }
+        else
+        {
+            if (_rb != null) _rb.linearVelocity = Vector2.zero;
+            UpdateCombatAnimator(Vector2.zero, 0f);
+
+            if (Time.time >= _nextAttackTime)
+            {
+                if (_hammerComponent != null)
+                {
+                    _hammerComponent.ExecuteAttack();
+                    _nextAttackTime = Time.time + _attackCooldown;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 戦闘移動中のアニメーションパラメータ（MoveX/MoveY/Speed/Blend）を更新する。
+    /// SetMoveInput は _moveInput（Rigidbody駆動のWalk()用）も書き換えてしまうため、
+    /// transform.position を直接動かす戦闘中はこちらを使う。
+    /// </summary>
+    private void UpdateCombatAnimator(Vector2 moveDirection, float speedValue)
+    {
+        if (_anim == null) return;
+        _anim.SetFloat("MoveX", moveDirection.x);
+        _anim.SetFloat("MoveY", moveDirection.y);
+        if (HasParameter(_anim, "Speed"))
+        {
+            _anim.SetFloat("Speed", speedValue);
+        }
+        _anim.SetFloat("Blend", speedValue);
+    }
+
+    /// <summary>
+    /// Qキーによる攻撃指示（ThiefNPC.CommandAttack()と同じ考え方）。
+    /// 即座に索敵を行い、敵が見つからなければプレイヤーの位置へ集合する。
+    /// </summary>
+    public void CommandAttack()
+    {
+        _isCommandedToAttack = true;
+
+        FindNearbyEnemy();
+
+        if (_targetEnemy == null)
+        {
+            FindPlayerTransform();
+            if (_playerTransform != null)
+            {
+                _isGatheringToPlayer = true;
+            }
+        }
+        else
+        {
+            _isGatheringToPlayer = false;
+        }
+    }
+
+    /// <summary>
+    /// 攻撃指示をキャンセルし、通常の伐採AIへ復帰させる。
+    /// </summary>
+    public void CancelAttackCommand()
+    {
+        _isCommandedToAttack = false;
+        _isGatheringToPlayer = false;
+        _targetEnemy = null;
+    }
+
+    private void FindPlayerTransform()
+    {
+        // "Player" タグがついているオブジェクトを操作中のプレイヤーとして探す
+        GameObject playerObj = GameObject.FindWithTag("Player");
+        if (playerObj != null)
+        {
+            _playerTransform = playerObj.transform;
+        }
+    }
+
+    /// <summary>
+    /// 攻撃指示を受けたが周囲に敵がいない場合、プレイヤーの位置まで集合する。
+    /// </summary>
+    private void GatherToPlayer()
+    {
+        if (_playerTransform == null)
+        {
+            FindPlayerTransform();
+            if (_playerTransform == null)
+            {
+                _isGatheringToPlayer = false;
+                return;
+            }
+        }
+
+        float distance = Vector2.Distance(transform.position, _playerTransform.position);
+
+        if (distance <= _attackRange)
+        {
+            // プレイヤーの近くまで来たら停止して待機（次の索敵で敵が見つかれば戦闘へ移行）
+            if (_rb != null) _rb.linearVelocity = Vector2.zero;
+            UpdateCombatAnimator(Vector2.zero, 0f);
+            return;
+        }
+
+        if (_rb != null) _rb.linearVelocity = Vector2.zero;
+        Vector3 moveDirection = ((Vector3)_playerTransform.position - transform.position).normalized;
+        Vector3 nextPosition = Vector2.MoveTowards(transform.position, _playerTransform.position, _combatMoveSpeed * Time.deltaTime);
+        transform.position = nextPosition;
+        UpdateCombatAnimator(moveDirection, _combatMoveSpeed);
+    }
+
     void Update()
     {
+        // 死亡後は何もしない（自律AI・戦闘・伐採のいずれも停止）
+        if (isDead) return;
+
         // プレイヤー入力は受け付けず、伐採AIが駆動する。
         // （AIの移動入力は LumberjackLoop 内で SetMoveInput 経由で設定される）
         KeepZFixed();
+
+        // --- Qキー：攻撃指示（ThiefNPCと同じキーを共有） ---
+        if (Input.GetKeyDown(_attackCommandKey))
+        {
+            CommandAttack();
+        }
+
+        // --- 敵の索敵（ThiefNPC同様、自衛のため最優先で対応） ---
+        FindNearbyEnemy();
+
+        if (_targetEnemy != null)
+        {
+            // 戦闘中は伐採AIを一時停止し、敵に対処する
+            if (_lumberRoutine != null)
+            {
+                StopLumberAI();
+            }
+            _isGatheringToPlayer = false;
+            ExecuteCombatAI();
+            return;
+        }
+        else if (_isGatheringToPlayer)
+        {
+            // 攻撃指示は出たが敵がいない：プレイヤーの位置へ集合する
+            if (_lumberRoutine != null)
+            {
+                StopLumberAI();
+            }
+            GatherToPlayer();
+            return;
+        }
+        else if (_lumberRoutine == null)
+        {
+            // 敵がいなくなったら伐採AIへ復帰
+            StartLumberAI();
+        }
 
         // --- 手動ターゲット設定（右クリック） ---
         if (Input.GetMouseButtonDown(1))
@@ -398,7 +677,7 @@ public class NPCPlayerHelper : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.X))
         {
             // すべてのNPCPlayerHelperにキャンセル指令を出す
-            NPCPlayerHelper[] npcs = FindObjectsOfType<NPCPlayerHelper>();
+            NPCPlayerHelper[] npcs = FindObjectsByType<NPCPlayerHelper>();
             foreach (var npc in npcs)
             {
                 npc.CancelAll();
@@ -563,6 +842,10 @@ public class NPCPlayerHelper : MonoBehaviour
         _targetTree = null;
         _manualTarget = null;
         _lumberState = LumberState.Idle;
+        // Qキーによる攻撃指示状態もリセット
+        _isCommandedToAttack = false;
+        _isGatheringToPlayer = false;
+        _targetEnemy = null;
         // 移動入力とアニメーションリセット
         SetMoveInput(Vector2.zero);
         // Rigidbodyの速度をゼロに

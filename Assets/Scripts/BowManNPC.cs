@@ -6,7 +6,7 @@ public class BowManNPC : MonoBehaviour
     [Header("Settings")]
     public float moveSpeed = 2.0f;
     [Tooltip("プレイヤーに近づかれたときに後退する速度")]
-    public float retreatBackSpeed = 1.0f; // ★ ここを追加（デフォルトで遅めに設定）
+    public float retreatBackSpeed = 0.5f; // ★ 追いつきやすいようさらに遅めに調整
     
     public float detectRange = 8.0f;
     public float keepDistanceRange = 3.0f;
@@ -28,8 +28,6 @@ public class BowManNPC : MonoBehaviour
     
     // 退却中フラグ
     private bool isRetreating = false;
-    // 退却先
-    private Transform retreatTarget;
     
     // 退却設定
     [Header("Retreat Settings")]
@@ -51,9 +49,6 @@ public class BowManNPC : MonoBehaviour
         
         // 退却中の行動を制御するためのフラグをチェック
         isRetreating = arrowHitHandler.IsRetreating();
-        
-        // 退却先を取得
-        FindRetreatTarget();
 
         // arrowSpawnPointが未設定の場合、自身のTransformを代用
         if (arrowSpawnPoint == null)
@@ -65,13 +60,19 @@ public class BowManNPC : MonoBehaviour
     void Update()
     {
         // 退却中は他の処理をスキップ
+        // 注意：実際の移動・アニメーション更新は ArrowHitHandler.RetreatToBlacksmith()
+        // コルーチンが単独で担当している（rb.simulated=false にした上で
+        // transform.position を直接動かしている）。
+        // 以前はここで自前の ExecuteRetreatAI() も毎フレーム呼んでおり、
+        // 同じ鍛冶屋座標へ向けて transform.position を「二重に」動かしてしまい、
+        // 結果的に retreatMoveSpeed の実質2倍の速さで逃げてしまっていた
+        // （＝プレイヤーが追いつけない一因）。ここでは状態の同期だけ行う。
         if (isRetreating)
         {
             if (arrowHitHandler != null)
             {
                 isRetreating = arrowHitHandler.IsRetreating();
             }
-            ExecuteRetreatAI();
             return;
         }
         
@@ -107,60 +108,8 @@ public class BowManNPC : MonoBehaviour
         UpdateAnimation(moveDirection);
     }
 
-    /// <summary>
-    /// 退却中のAI処理
-    /// </summary>
-    private void ExecuteRetreatAI()
-    {
-        if (retreatTarget == null)
-        {
-            FindRetreatTarget();
-            if (retreatTarget == null)
-            {
-                isRetreating = false;
-                return;
-            }
-        }
-
-        float distanceToTarget = Vector2.Distance(transform.position, retreatTarget.position);
-
-        // 退却先に到達したら退却完了
-        if (distanceToTarget <= retreatStopDistance)
-        {
-            isRetreating = false;
-            if (animator != null) UpdateAnimation(Vector2.zero);
-            return;
-        }
-
-        Vector3 moveDirection = ((Vector3)retreatTarget.position - transform.position).normalized;
-        Vector3 nextPosition = Vector2.MoveTowards(transform.position, retreatTarget.position, retreatMoveSpeed * Time.deltaTime);
-        transform.position = nextPosition;
-
-        if (animator != null)
-        {
-            UpdateAnimation(moveDirection);
-        }
-    }
-
-    /// <summary>
-    /// 退却先を検索
-    /// </summary>
-    private void FindRetreatTarget()
-    {
-        // ArrowHitHandlerからBlacksmithの位置を取得
-        if (arrowHitHandler != null && arrowHitHandler.blacksmithPosition != null)
-        {
-            retreatTarget = arrowHitHandler.blacksmithPosition;
-            return;
-        }
-        
-        // シーン内からBlacksmithタグのオブジェクトを検索
-        GameObject blacksmithObj = GameObject.FindGameObjectWithTag("Blacksmith");
-        if (blacksmithObj != null)
-        {
-            retreatTarget = blacksmithObj.transform;
-        }
-    }
+    // 退却中の移動・アニメーションは ArrowHitHandler.RetreatToBlacksmith() が単独で担当する
+    // （旧 ExecuteRetreatAI() / FindRetreatTarget() は二重移動の原因になっていたため削除済み）
 
     private void FindTarget()
     {

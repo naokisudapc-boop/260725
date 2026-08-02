@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1000000000000000002}
   - component: {fileID: 6135740760990413794}
+  - component: {fileID: -3774695948409603285}
   - component: {fileID: 1000000000000000003}
   - component: {fileID: 1000000000000000004}
   - component: {fileID: 1000000000000000005}
@@ -56,6 +57,21 @@ MonoBehaviour:
   isDead: 0
   shakeDuration: 0.5
   shakeMagnitude: 0.1
+--- !u!114 &-3774695948409603285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ae7cc1d561407149b51f7762db0aa47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArrowHitHandler
+  retreatMoveSpeed: 1.5
+  retreatStopDistance: 0.5
+  blacksmithPosition: {fileID: 0}
 --- !u!114 &1000000000000000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -71,7 +87,7 @@ MonoBehaviour:
   gender: 0
   _moveSpeed: 5
   correctPlayerController: {fileID: 9100000, guid: e12e8b412ea36854c9549cc347cdcbc6, type: 2}
-  _detectRange: 999
+  _detectRange: 12
   _reachDistance: 1.2
   _chopDuration: 2
   _treeTag: Tree

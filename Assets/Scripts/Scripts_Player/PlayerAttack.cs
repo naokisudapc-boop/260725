@@ -17,7 +17,6 @@ public class PlayerAttack : MonoBehaviour
 
     [Header("Visual Juice")]
     [SerializeField] private float jumpDuration = 0.3f;
-    [SerializeField] private float rotationSpeed = 720f;
 
     private SpriteRenderer axeSpriteRenderer;
     private PlayerAxe playerAxe;
@@ -48,13 +47,44 @@ public class PlayerAttack : MonoBehaviour
         // 2. プレハブやタイルが未設定の場合、シーン内の ThiefNPC から設定をコピー
         if (afterMinedTile == null || ironOrePrefab == null)
         {
-            ThiefNPC thief = Object.FindFirstObjectByType<ThiefNPC>();
+            ThiefNPC thief = Object.FindAnyObjectByType<ThiefNPC>();
             if (thief != null)
             {
                 if (afterMinedTile == null) afterMinedTile = thief.afterMinedTile;
                 if (ironOrePrefab == null) ironOrePrefab = thief.ironOrePrefab;
             }
         }
+
+        // 3. treeLayer が未設定（LayerMaskが空）の場合を補完する。
+        // GameManager.SelectNextPlayer() が操作キャラクター昇格時に
+        // AddComponent<PlayerAttack>() で新規追加すると、Inspectorで設定済みの
+        // treeLayer はコピーされず空（value == 0）のまま生成されてしまい、
+        // 木の当たり判定（Physics2D.OverlapCircleAll）が常に何もヒットしなくなる。
+        if (treeLayer.value == 0)
+        {
+            AutoSetupTreeLayer();
+        }
+    }
+
+    /// <summary>
+    /// treeLayer を、シーン内に既に設定済みの PlayerAttack があればそこからコピーし、
+    /// 見つからない場合は本プロジェクトのPlayerに設定されている木レイヤー
+    /// （Layer 9 相当）をフォールバックとして使用する。
+    /// </summary>
+    private void AutoSetupTreeLayer()
+    {
+        PlayerAttack[] allAttacks = Object.FindObjectsByType<PlayerAttack>();
+        foreach (PlayerAttack other in allAttacks)
+        {
+            if (other != this && other.treeLayer.value != 0)
+            {
+                treeLayer = other.treeLayer;
+                return;
+            }
+        }
+
+        // シーン内に参照できる設定が見つからない場合のフォールバック
+        treeLayer = 1 << 9;
     }
 
     public void ResolveAttackPoint()

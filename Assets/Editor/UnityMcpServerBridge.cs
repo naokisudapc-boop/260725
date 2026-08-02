@@ -8,21 +8,56 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class UnityMcpServerBridge
 {
+    private const int Port = 29293;
     private static HttpListener listener;
 
     static UnityMcpServerBridge()
     {
-        // 無料版MCPサーバーが探しに来るポート29293番でサーバーを起動
-        listener = new HttpListener();
-        listener.Prefixes.Add("http://localhost:29293/");
-        listener.Start();
-        listener.BeginGetContext(OnRequest, null);
-        Debug.Log("[Unity MCP] 完全無料版・JSON-RPC互換ブリッジが起動しました。");
+        StartListener();
+
+        // スクリプト再コンパイル（ドメインリロード）前に確実にポートを解放する。
+        // これをしないと、再コンパイルのたびに古い HttpListener がポートを
+        // 掴んだままになり、次回起動時に SocketException（ポート使用中）が発生する。
+        AssemblyReloadEvents.beforeAssemblyReload += StopListener;
+    }
+
+    private static void StartListener()
+    {
+        try
+        {
+            listener = new HttpListener();
+            listener.Prefixes.Add($"http://localhost:{Port}/");
+            listener.Start();
+            listener.BeginGetContext(OnRequest, null);
+            Debug.Log("[Unity MCP] 完全無料版・JSON-RPC互換ブリッジが起動しました。");
+        }
+        catch (System.Net.Sockets.SocketException e)
+        {
+            // 既に他のインスタンス（別プロジェクトや直前のドメインリロード分）が
+            // ポートを使用している場合はここに来る。起動失敗として警告に留め、
+            // Editorのコンパイルを妨げないようにする。
+            Debug.LogWarning($"[Unity MCP] ポート{Port}が使用中のため起動できませんでした。既に別のインスタンスが起動している可能性があります: {e.Message}");
+            listener = null;
+        }
+    }
+
+    private static void StopListener()
+    {
+        AssemblyReloadEvents.beforeAssemblyReload -= StopListener;
+        if (listener != null)
+        {
+            if (listener.IsListening)
+            {
+                listener.Stop();
+            }
+            listener.Close();
+            listener = null;
+        }
     }
 
     private static void OnRequest(IAsyncResult result)
     {
-        if (!listener.IsListening) return;
+        if (listener == null || !listener.IsListening) return;
         var context = listener.EndGetContext(result);
         listener.BeginGetContext(OnRequest, null);
 

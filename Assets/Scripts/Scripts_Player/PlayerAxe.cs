@@ -4,7 +4,7 @@ using System.Collections;
 public class PlayerAxe : MonoBehaviour
 {
     [Header("Rotation Settings")]
-    [SerializeField] private float rotationSpeed = 720f;
+    [SerializeField] private float rotationSpeed = 1440f;
 
     private Collider2D axeCollider;
     private SpriteRenderer spriteRenderer; // ★追加：見た目だけを回すため

@@ -48,7 +48,7 @@ public class PlayerSpawnerNPC : MonoBehaviour
 
         if (playerPrefab == null)
         {
-            PlayerSpawnerNPC[] allSpawners = Object.FindObjectsByType<PlayerSpawnerNPC>(FindObjectsSortMode.None);
+            PlayerSpawnerNPC[] allSpawners = Object.FindObjectsByType<PlayerSpawnerNPC>();
             foreach (var spawner in allSpawners)
             {
                 if (!spawner.gameObject.name.Contains("(Clone)") && spawner.playerPrefab != null)
@@ -61,7 +61,7 @@ public class PlayerSpawnerNPC : MonoBehaviour
 
         if (girlPrefab == null)
         {
-            PlayerSpawnerNPC[] allSpawners = Object.FindObjectsByType<PlayerSpawnerNPC>(FindObjectsSortMode.None);
+            PlayerSpawnerNPC[] allSpawners = Object.FindObjectsByType<PlayerSpawnerNPC>();
             foreach (var spawner in allSpawners)
             {
                 if (!spawner.gameObject.name.Contains("(Clone)") && spawner.girlPrefab != null)
@@ -85,11 +85,39 @@ public class PlayerSpawnerNPC : MonoBehaviour
 
         if (Input.GetKeyDown(interactKey))
         {
-            if (distance <= interactRange)
+            if (distance <= interactRange && IsClosestFemaleSpawnerToPlayer(currentPlayerObj.transform, distance))
             {
                 TrySpawnNewPlayer();
             }
         }
+    }
+
+    /// <summary>
+    /// 射程内にいる女性NPC（PlayerSpawnerNPC）の中で、自分がプレイヤーに
+    /// 最も近い1体かどうかを判定する。これにより、Eキー1回の入力で
+    /// 近くの女性NPC全員が同時に反応してしまうのを防ぎ、最も近い1体だけに限定する。
+    /// </summary>
+    private bool IsClosestFemaleSpawnerToPlayer(Transform playerTransform, float myDistance)
+    {
+        PlayerSpawnerNPC[] allSpawners = Object.FindObjectsByType<PlayerSpawnerNPC>();
+        foreach (var spawner in allSpawners)
+        {
+            if (spawner == this) continue;
+            if (spawner.currentNPCData == null || spawner.currentNPCData.gender != Gender.Female) continue;
+            if (spawner.isVisualPlaying) continue; // 演出中の子は候補から除外
+
+            float otherDistance = Vector2.Distance(spawner.transform.position, playerTransform.position);
+            if (otherDistance > spawner.interactRange) continue; // 射程外なら競合しない
+
+            if (otherDistance < myDistance) return false; // 自分より近い子がいる
+
+            // 距離が同じ場合は InstanceID で一意にタイブレークする
+            if (Mathf.Approximately(otherDistance, myDistance) && spawner.GetInstanceID() < GetInstanceID())
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void TrySpawnNewPlayer()
@@ -188,7 +216,7 @@ public class PlayerSpawnerNPC : MonoBehaviour
 
             GameObject newPlayer = Instantiate(playerPrefab, spawnPlace.position, Quaternion.identity);
 
-            int cloneCount = Object.FindObjectsByType<PlayerSpawnerNPC>(FindObjectsSortMode.None).Length;
+            int cloneCount = Object.FindObjectsByType<PlayerSpawnerNPC>().Length;
             newPlayer.name = $"PlayerHelper_Clone_{cloneCount}_{newPlayer.name.Replace("(Clone)", "")}";
 
             // NPC 仕様の Player ヘルパーは、味方（Ally）として扱う
@@ -210,6 +238,9 @@ public class PlayerSpawnerNPC : MonoBehaviour
             {
                 newHealth.isPlayer = false;       // 操作は別キャラのまま
                 newHealth.isControllable = false;
+                // アタッチされてはいてもデフォルトで無効化されていることがあるため、
+                // 明示的に有効化する（死亡判定・操作キャラクター交代の対象にするため必須）
+                newHealth.enabled = true;
             }
 
             // 新しい味方がスポーンしたので人口カウンターを更新
@@ -226,7 +257,7 @@ public class PlayerSpawnerNPC : MonoBehaviour
 
             GameObject newGirl = Instantiate(girlPrefab, spawnPlace.position, Quaternion.identity);
 
-            int cloneCount = Object.FindObjectsByType<PlayerSpawnerNPC>(FindObjectsSortMode.None).Length;
+            int cloneCount = Object.FindObjectsByType<PlayerSpawnerNPC>().Length;
             newGirl.name = $"Girl_Clone_{cloneCount}_{newGirl.name.Replace("(Clone)", "")}";
 
             // 女の子は Player を呼べる特別な味方（Ally）として扱う

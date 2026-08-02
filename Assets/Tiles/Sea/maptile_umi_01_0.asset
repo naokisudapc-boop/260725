@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 13312, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: '[A]Water2_pipo_32'
+  m_Name: maptile_umi_01_0
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.Tilemaps.Tile
-  m_Sprite: {fileID: 774612222, guid: 7a8d0364fb0ed7143a4aa6143eb4ab7e, type: 3}
+  m_Sprite: {fileID: 6449306638448837906, guid: f8fd16ddf82f22244bc72cc145d16134, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Transform:
     e00: 1

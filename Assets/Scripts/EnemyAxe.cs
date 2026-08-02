@@ -62,10 +62,13 @@ public class EnemyAxe : MonoBehaviour
             health = collision.GetComponent<CharacterHealth>();
         }
 
-        // Player タグ、または FarmingNPC / ThiefNPC を持つ味方も対象にする
+        // Player タグ、Ally タグ（非操作中の味方NPC）、または FarmingNPC / ThiefNPC /
+        // NPCPlayerHelper を持つ味方も対象にする
         bool isTarget = collision.CompareTag("Player")
+            || collision.CompareTag("Ally")
             || collision.gameObject.GetComponent<FarmingNPC>() != null
-            || collision.gameObject.GetComponent<ThiefNPC>() != null;
+            || collision.gameObject.GetComponent<ThiefNPC>() != null
+            || collision.gameObject.GetComponent<NPCPlayerHelper>() != null;
 
         if (health != null && !health.isDead && isTarget)
         {

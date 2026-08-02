@@ -36,7 +36,7 @@ public class NPCSpawner : MonoBehaviour
 
         if (maleNpcPrefab == null || femaleNpcPrefab == null)
         {
-            NPCSpawner[] allSpawners = Object.FindObjectsByType<NPCSpawner>(FindObjectsSortMode.None);
+            NPCSpawner[] allSpawners = Object.FindObjectsByType<NPCSpawner>();
             foreach (var spawner in allSpawners)
             {
                 if (!spawner.gameObject.name.Contains("(Clone)") && spawner.maleNpcPrefab != null && spawner.femaleNpcPrefab != null)
@@ -180,7 +180,7 @@ public class NPCSpawner : MonoBehaviour
         GameObject prefabToSpawn = (chosenGender == Gender.Male) ? maleNpcPrefab : femaleNpcPrefab;
         GameObject newNPC = Instantiate(prefabToSpawn, blacksmithPlace.position, Quaternion.identity);
         
-        int cloneCount = Object.FindObjectsByType<NPCSpawner>(FindObjectsSortMode.None).Length;
+        int cloneCount = Object.FindObjectsByType<NPCSpawner>().Length;
         newNPC.name = $"{chosenGender}_Clone_{cloneCount}_{newNPC.name.Replace("(Clone)", "")}";
 
         NPCSpawner newNPCSpawner = newNPC.GetComponent<NPCSpawner>();

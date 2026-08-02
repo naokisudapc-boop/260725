@@ -18,7 +18,7 @@ public class NPCCommandController : MonoBehaviour
             }
 
             // 1. シーン内のすべての ThiefNPC を取得
-            ThiefNPC[] allThieves = Object.FindObjectsByType<ThiefNPC>(FindObjectsSortMode.None);
+            ThiefNPC[] allThieves = Object.FindObjectsByType<ThiefNPC>();
             int successCount = 0;
 
             // 今回のMキー入力で、既に他のNPCが向かうことに決まった鉱石の座標を記憶するセット

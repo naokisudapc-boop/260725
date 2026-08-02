@@ -104,7 +104,7 @@ public class EnemyAI : MonoBehaviour
             }
         }
 
-        FarmingNPC[] villagers = Object.FindObjectsByType<FarmingNPC>(FindObjectsSortMode.None);
+        FarmingNPC[] villagers = Object.FindObjectsByType<FarmingNPC>();
         foreach (var villager in villagers)
         {
             if (villager.gameObject.CompareTag("Player")) continue;
@@ -116,7 +116,7 @@ public class EnemyAI : MonoBehaviour
             }
         }
 
-        ThiefNPC[] thieves = Object.FindObjectsByType<ThiefNPC>(FindObjectsSortMode.None);
+        ThiefNPC[] thieves = Object.FindObjectsByType<ThiefNPC>();
         foreach (var thief in thieves)
         {
             if (thief.gameObject.CompareTag("Player")) continue;

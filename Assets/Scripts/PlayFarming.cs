@@ -58,7 +58,7 @@ public class PlayerFarming : MonoBehaviour
     // 範囲内で最も近い FarmingNPC を検出する
     private FarmingNPC FindNearestNPC(Vector3 targetPosition)
     {
-        FarmingNPC[] allNPCs = Object.FindObjectsByType<FarmingNPC>(FindObjectsSortMode.None);
+        FarmingNPC[] allNPCs = Object.FindObjectsByType<FarmingNPC>();
         
         FarmingNPC bestTarget = null;
         bool foundClone = false;

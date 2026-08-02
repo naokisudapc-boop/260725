@@ -58,8 +58,6 @@ public class ThiefNPC : FarmingNPC
     
     // 退却中フラグ
     private bool isRetreating = false;
-    // 退却先
-    private Transform retreatTarget;
 
     private bool IsActingIndependently => isMining || targetGhost != null || isGatheringToPlayer || isRetreating; 
 
@@ -98,9 +96,6 @@ public class ThiefNPC : FarmingNPC
         {
             isRetreating = arrowHitHandler.IsRetreating();
         }
-        
-        // 退却先を取得
-        FindRetreatTarget();
     }
 
     protected override void Start()
@@ -114,13 +109,16 @@ public class ThiefNPC : FarmingNPC
         if (health != null && health.isDead) return;
         
         // 退却中は他の処理をスキップ
+        // 注意：実際の移動・アニメーション更新は ArrowHitHandler.RetreatToBlacksmith()
+        // コルーチンが単独で担当している。以前はここでも自前の ExecuteRetreatAI() を
+        // 毎フレーム呼んでおり、同じ鍛冶屋座標へ向けて transform.position を二重に
+        // 動かしてしまっていた（＝実質2倍速で退却していた）ため削除した。
         if (isRetreating)
         {
             if (arrowHitHandler != null)
             {
                 isRetreating = arrowHitHandler.IsRetreating();
             }
-            ExecuteRetreatAI();
             return;
         }
 
@@ -183,65 +181,8 @@ public class ThiefNPC : FarmingNPC
         }
     }
 
-    /// <summary>
-    /// 退却中のAI処理
-    /// </summary>
-    private void ExecuteRetreatAI()
-    {
-        if (retreatTarget == null)
-        {
-            FindRetreatTarget();
-            if (retreatTarget == null)
-            {
-                isRetreating = false;
-                return;
-            }
-        }
-
-        float distanceToTarget = Vector2.Distance(transform.position, retreatTarget.position);
-
-        // 退却先に到達したら退却完了
-        if (distanceToTarget <= retreatStopDistance)
-        {
-            isRetreating = false;
-            if (animator != null) UpdateAnimatorFloat("Speed", 0f);
-            return;
-        }
-
-        Rigidbody2D targetRb = GetComponent<Rigidbody2D>();
-        if (targetRb != null) targetRb.linearVelocity = Vector2.zero;
-
-        Vector3 moveDirection = ((Vector3)retreatTarget.position - transform.position).normalized;
-        Vector3 nextPosition = Vector2.MoveTowards(transform.position, retreatTarget.position, retreatMoveSpeed * Time.deltaTime);
-        transform.position = nextPosition;
-
-        if (animator != null)
-        {
-            UpdateAnimatorFloat("InputX", moveDirection.x);
-            UpdateAnimatorFloat("InputY", moveDirection.y);
-            UpdateAnimatorFloat("Speed", retreatMoveSpeed);
-        }
-    }
-
-    /// <summary>
-    /// 退却先を検索
-    /// </summary>
-    private void FindRetreatTarget()
-    {
-        // ArrowHitHandlerからBlacksmithの位置を取得
-        if (arrowHitHandler != null && arrowHitHandler.blacksmithPosition != null)
-        {
-            retreatTarget = arrowHitHandler.blacksmithPosition;
-            return;
-        }
-        
-        // シーン内からBlacksmithタグのオブジェクトを検索
-        GameObject blacksmithObj = GameObject.FindGameObjectWithTag("Blacksmith");
-        if (blacksmithObj != null)
-        {
-            retreatTarget = blacksmithObj.transform;
-        }
-    }
+    // 退却中の移動・アニメーションは ArrowHitHandler.RetreatToBlacksmith() が単独で担当する
+    // （旧 ExecuteRetreatAI() / FindRetreatTarget() は二重移動の原因になっていたため削除済み）
 
     private void ExecuteCombatAI()
     {
@@ -491,23 +432,5 @@ public class ThiefNPC : FarmingNPC
                 UpdateAnimatorFloat("LastInputY", y);
             }
         }
-    }
-
-    private void UpdateAnimatorFloat(string paramName, float value)
-    {
-        if (animator != null && HasParameter(animator, paramName))
-        {
-            animator.SetFloat(paramName, value);
-        }
-    }
-
-    protected bool HasParameter(Animator anim, string paramName)
-    {
-        if (anim == null) return false;
-        foreach (AnimatorControllerParameter param in anim.parameters)
-        {
-            if (param.name == paramName) return true;
-        }
-        return false;
     }
 }

@@ -68,7 +68,7 @@ public class GameManager : MonoBehaviour
     public void RecountPopulation()
     {
         int count = 0;
-        CharacterHealth[] allCharacters = Object.FindObjectsByType<CharacterHealth>(FindObjectsSortMode.None);
+        CharacterHealth[] allCharacters = Object.FindObjectsByType<CharacterHealth>();
 
         foreach (CharacterHealth ch in allCharacters)
         {
@@ -261,12 +261,12 @@ public class GameManager : MonoBehaviour
 
     public void ReplacePlayer(CharacterHealth deadPlayer)
     {
-        CharacterHealth[] allCharacters = Object.FindObjectsByType<CharacterHealth>(FindObjectsSortMode.None);
+        CharacterHealth[] allCharacters = Object.FindObjectsByType<CharacterHealth>();
         CharacterHealth nextPlayer = null;
 
         foreach (CharacterHealth ch in allCharacters)
         {
-            if (ch != deadPlayer && !ch.isDead)
+            if (ch != deadPlayer && !ch.isDead && IsEligibleForPlayerControl(ch))
             {
                 // 次の操作キャラクター候補を決定
                 nextPlayer = ch;
@@ -284,12 +284,12 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void ReplacePlayer(GameObject deadPlayerObj)
     {
-        CharacterHealth[] allCharacters = Object.FindObjectsByType<CharacterHealth>(FindObjectsSortMode.None);
+        CharacterHealth[] allCharacters = Object.FindObjectsByType<CharacterHealth>();
         CharacterHealth nextPlayer = null;
 
         foreach (CharacterHealth ch in allCharacters)
         {
-            if (ch.gameObject != deadPlayerObj && !ch.isDead)
+            if (ch.gameObject != deadPlayerObj && !ch.isDead && IsEligibleForPlayerControl(ch))
             {
                 // 次の操作キャラクター候補を決定
                 nextPlayer = ch;
@@ -301,12 +301,37 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
+    /// このキャラクターが次の操作キャラクター候補として選ばれてよいかを判定する。
+    /// 女性の村人（FarmingNPC / NPCPlayerHelper の gender == Female）は、
+    /// 戦闘用の武器（Hammer）や攻撃コマンドを持たない住民として設計されているため、
+    /// 誤って操作キャラクターに選ばれないよう除外する。
+    /// FarmingNPC/NPCPlayerHelper のどちらも付いていないキャラクター（本来のPlayer本体など）
+    /// は性別情報を持たないため、判定対象外として許可する。
+    /// </summary>
+    private bool IsEligibleForPlayerControl(CharacterHealth ch)
+    {
+        FarmingNPC farmingData = ch.GetComponent<FarmingNPC>();
+        if (farmingData != null)
+        {
+            return farmingData.gender == Gender.Male;
+        }
+
+        NPCPlayerHelper helperData = ch.GetComponent<NPCPlayerHelper>();
+        if (helperData != null)
+        {
+            return helperData.gender == Gender.Male;
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// 次の操作キャラクターを決定し、操作権限を付与する共通処理。
     /// </summary>
     private void SelectNextPlayer(CharacterHealth nextPlayer)
     {
         // ▼▼▼ 追加：直前まで操作していた既存のプレイヤーたちのフラグ・タグをリセットする ▼▼▼
-        CharacterHealth[] allCharacters = Object.FindObjectsByType<CharacterHealth>(FindObjectsSortMode.None);
+        CharacterHealth[] allCharacters = Object.FindObjectsByType<CharacterHealth>();
         foreach (CharacterHealth ch in allCharacters)
         {
             if (ch.isPlayer)

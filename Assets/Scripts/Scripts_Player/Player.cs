@@ -93,17 +93,20 @@ public class NewMonoBehaviourScript : MonoBehaviour
         float x = Input.GetAxisRaw("Horizontal");
         float y = Input.GetAxisRaw("Vertical");
 
-        _anim.SetFloat("InputX", x);
-        _anim.SetFloat("InputY", y);
-
         _moveInput = new Vector2(x, y).normalized;
 
-        _anim.SetFloat("Speed", _moveInput.magnitude);
+        if (_anim == null) return;
+
+        // Animator.SetFloat は存在しないパラメータを渡しても例外を投げず、
+        // コンソールに警告を出すだけなので、事前に存在確認してから呼び出す。
+        if (HasParameter(_anim, "InputX")) _anim.SetFloat("InputX", x);
+        if (HasParameter(_anim, "InputY")) _anim.SetFloat("InputY", y);
+        if (HasParameter(_anim, "Speed")) _anim.SetFloat("Speed", _moveInput.magnitude);
 
         if (_moveInput.magnitude > 0.1f)
         {
-            _anim.SetFloat("LastInputX", x);
-            _anim.SetFloat("LastInputY", y);
+            if (HasParameter(_anim, "LastInputX")) _anim.SetFloat("LastInputX", x);
+            if (HasParameter(_anim, "LastInputY")) _anim.SetFloat("LastInputY", y);
         }
     }
 

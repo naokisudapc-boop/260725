@@ -217,24 +217,34 @@ public class ArrowHitHandler : MonoBehaviour
     /// </summary>
     private void UpdateAnimatorForMovement(Vector3 direction, float speed)
     {
-        Animator anim = GetComponent<Animator>();
-        if (anim != null)
+        // NPCPlayerHelper/BowManNPC 等は実際に使うAnimatorが子オブジェクトにあるため、
+        // GetComponent ではなく GetComponentInChildren で探す（ThiefNPC/FarmingNPCのように
+        // 自分自身にAnimatorがある場合もこれで問題なく見つかる）
+        Animator anim = GetComponentInChildren<Animator>();
+        if (anim == null) return;
+
+        // Controllerが割り当てられていないAnimatorに対して parameters にアクセスすると
+        // 「Animator is not playing an AnimatorController」という警告が出るため、先に確認する。
+        if (anim.runtimeAnimatorController == null) return;
+
+        // Animator.SetFloat は存在しないパラメータを渡しても例外を投げず、
+        // コンソールに警告を出すだけなので、事前に存在確認してから呼び出す。
+        if (HasParameter(anim, "InputX")) anim.SetFloat("InputX", direction.x);
+        if (HasParameter(anim, "InputY")) anim.SetFloat("InputY", direction.y);
+        if (HasParameter(anim, "Speed")) anim.SetFloat("Speed", speed);
+    }
+
+    /// <summary>
+    /// 指定した名前のパラメータがAnimatorに存在するかを確認する
+    /// （FarmingNPC.HasParameterと同じロジック）
+    /// </summary>
+    private bool HasParameter(Animator anim, string paramName)
+    {
+        foreach (AnimatorControllerParameter param in anim.parameters)
         {
-            if (anim.parameters.Length > 0)
-            {
-                // InputX, InputY, Speedなどのパラメータがある場合更新
-                try
-                {
-                    anim.SetFloat("InputX", direction.x);
-                    anim.SetFloat("InputY", direction.y);
-                    anim.SetFloat("Speed", speed);
-                }
-                catch
-                {
-                    // パラメータが存在しない場合は無視
-                }
-            }
+            if (param.name == paramName) return true;
         }
+        return false;
     }
     
     /// <summary>
