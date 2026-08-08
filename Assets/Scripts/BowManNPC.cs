@@ -13,6 +13,17 @@ public class BowManNPC : MonoBehaviour
     public float attackRange = 5.0f;
     public float chargeTime = 0.5f;
     public float attackCooldown = 1.0f; // 射撃後の硬直時間
+
+    [Tooltip("拠点（スポーン地点）からこれ以上離れて後退しない上限距離。足の遅い相手に追われ続けても永遠に逃げ続けないための歯止め")]
+    public float leashRange = 10.0f;
+    private Vector3 _homePosition;
+
+    [Header("Home Base Settings")]
+    [Tooltip("拠点となるオブジェクトの名前。見つかった場合、敵がいないときにこのオブジェクトの近くまで自動で戻る（リーシュ機能の基準点には影響しない）")]
+    [SerializeField] private string homeBaseObjectName = "Bowyery Workshop";
+    [Tooltip("敵がいないとき、拠点からこの距離以内まで近づいたら止まる")]
+    [SerializeField] private float returnToBaseStopDistance = 2.0f;
+    private Vector3 _returnBasePosition;
     
     [Header("References")]
     [SerializeField] private GameObject arrowPrefab;
@@ -39,6 +50,16 @@ public class BowManNPC : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponentInChildren<Animator>();
         rb.freezeRotation = true;
+
+        _homePosition = transform.position;
+
+        // 拠点復帰機能専用の目標地点（リーシュ機能の基準点には影響しない）
+        _returnBasePosition = transform.position;
+        GameObject homeBaseObj = GameObject.Find(homeBaseObjectName);
+        if (homeBaseObj != null)
+        {
+            _returnBasePosition = homeBaseObj.transform.position;
+        }
 
         // ArrowHitHandlerの取得または追加
         arrowHitHandler = GetComponent<ArrowHitHandler>();
@@ -78,16 +99,27 @@ public class BowManNPC : MonoBehaviour
         
         FindTarget();
         
-        // ターゲットがいない、または射撃中の場合は何もしない
-        if (target == null || isShooting) return;
+        // ターゲットがいない場合：拠点から離れていれば拠点付近まで自動で戻る
+        if (target == null)
+        {
+            if (!isShooting)
+            {
+                ReturnToBase();
+            }
+            return;
+        }
+
+        // 射撃中の場合は何もしない
+        if (isShooting) return;
 
         float distance = Vector2.Distance(transform.position, target.position);
         Vector2 moveDirection = Vector2.zero;
         float currentSpeed = moveSpeed; // 適用するスピード
 
-        if (distance < keepDistanceRange)
+        if (distance < keepDistanceRange && Vector2.Distance(transform.position, _homePosition) < leashRange)
         {
             // 近づかれすぎたので逃げる（後退速度を適用）
+            // ただし拠点から leashRange 以上離れている場合は後退せず踏みとどまる
             moveDirection = (transform.position - target.position).normalized;
             currentSpeed = retreatBackSpeed; // ★ ここで遅い後退速度に切り替える
         }
@@ -99,7 +131,8 @@ public class BowManNPC : MonoBehaviour
         }
         else
         {
-            // 攻撃射程内：停止して射撃開始
+            // 攻撃射程内、または後退の上限（leashRange）に達した場合：
+            // 停止して射撃開始（近づかれすぎていても、これ以上は下がらず応戦する）
             moveDirection = Vector2.zero;
             StartCoroutine(ShootRoutine());
         }
@@ -111,9 +144,39 @@ public class BowManNPC : MonoBehaviour
     // 退却中の移動・アニメーションは ArrowHitHandler.RetreatToBlacksmith() が単独で担当する
     // （旧 ExecuteRetreatAI() / FindRetreatTarget() は二重移動の原因になっていたため削除済み）
 
+    /// <summary>
+    /// 索敵範囲内に敵がいないとき、拠点（Bowyery Workshop等）から離れていれば
+    /// 拠点付近まで自動的に戻る。returnToBaseStopDistance以内まで近づいたら停止する。
+    /// </summary>
+    private void ReturnToBase()
+    {
+        float distanceFromHome = Vector2.Distance(transform.position, _returnBasePosition);
+
+        if (distanceFromHome <= returnToBaseStopDistance)
+        {
+            // 既に拠点付近にいるので待機
+            Move(Vector2.zero, 0f);
+            UpdateAnimation(Vector2.zero);
+            return;
+        }
+
+        Vector2 moveDirection = ((Vector2)_returnBasePosition - (Vector2)transform.position).normalized;
+        Move(moveDirection, moveSpeed);
+        UpdateAnimation(moveDirection);
+    }
+
     private void FindTarget()
     {
-        // PlayerまたはAllyタグのオブジェクトを探す
+        // 自身が"Ally"タグの場合（味方として生成されたBowManNPC）は、
+        // Player/Allyではなく Ghost/Enemy を敵として索敵する（ThiefNPC/NPCPlayerHelperと同じ考え方）。
+        // これをしないと、味方のはずのBowManNPCがプレイヤーや他の味方を撃ってしまう（同士討ち）。
+        if (gameObject.CompareTag("Ally"))
+        {
+            FindHostileTarget();
+            return;
+        }
+
+        // PlayerまたはAllyタグのオブジェクトを探す（敵側のBowManNPCの通常挙動）
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         GameObject[] allies = GameObject.FindGameObjectsWithTag("Ally");
         
@@ -140,6 +203,12 @@ public class BowManNPC : MonoBehaviour
         {
             // 自分自身は除外
             if (ally == gameObject) continue;
+
+            // 女性NPC（農作業などの非戦闘員）は攻撃対象から除外する
+            FarmingNPC farmingData = ally.GetComponent<FarmingNPC>();
+            if (farmingData != null && farmingData.gender == Gender.Female) continue;
+            NPCPlayerHelper helperData = ally.GetComponent<NPCPlayerHelper>();
+            if (helperData != null && helperData.gender == Gender.Female) continue;
             
             float distance = Vector2.Distance(transform.position, ally.transform.position);
             if (distance <= detectRange && distance < closestDistance)
@@ -152,6 +221,46 @@ public class BowManNPC : MonoBehaviour
             }
         }
         
+        target = closestTarget != null ? closestTarget.transform : null;
+    }
+
+    /// <summary>
+    /// 味方（Allyタグ）として生成されたBowManNPCの索敵。
+    /// ThiefNPC/NPCPlayerHelperと同じく、Ghost/Enemyタグを敵として狙う。
+    /// </summary>
+    private void FindHostileTarget()
+    {
+        GameObject closestTarget = null;
+        float closestDistance = detectRange;
+
+        GameObject[] ghosts = GameObject.FindGameObjectsWithTag("Ghost");
+        foreach (GameObject g in ghosts)
+        {
+            CharacterHealth health = g.GetComponent<CharacterHealth>();
+            if (health != null && health.isDead) continue;
+
+            float distance = Vector2.Distance(transform.position, g.transform.position);
+            if (distance <= detectRange && distance < closestDistance)
+            {
+                closestTarget = g;
+                closestDistance = distance;
+            }
+        }
+
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (GameObject e in enemies)
+        {
+            EnemyHealth enemyHealth = e.GetComponent<EnemyHealth>();
+            if (enemyHealth != null && enemyHealth.isDead) continue;
+
+            float distance = Vector2.Distance(transform.position, e.transform.position);
+            if (distance <= detectRange && distance < closestDistance)
+            {
+                closestTarget = e;
+                closestDistance = distance;
+            }
+        }
+
         target = closestTarget != null ? closestTarget.transform : null;
     }
 

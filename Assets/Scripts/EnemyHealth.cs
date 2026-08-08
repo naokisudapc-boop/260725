@@ -42,9 +42,22 @@ public class EnemyHealth : MonoBehaviour
         Collider2D col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;
 
-        // 2. Disable Animator to freeze animation instantly
+        // 2. Animatorに専用の死亡演出（IsDeadトリガー、例：Hurtクリップ）があれば
+        // それを再生する。ない場合は従来通りAnimatorを即座に無効化して
+        // 汎用の赤化＋転倒演出（DeathAnimationRoutine）を使う。
         Animator anim = GetComponent<Animator>();
-        if (anim != null) anim.enabled = false;
+        bool hasDeathAnimation = anim != null
+            && anim.runtimeAnimatorController != null
+            && HasParameter(anim, "IsDead");
+
+        if (hasDeathAnimation)
+        {
+            anim.SetTrigger("IsDead");
+        }
+        else if (anim != null)
+        {
+            anim.enabled = false;
+        }
 
         // 3. Stop physics and velocity completely
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
@@ -65,11 +78,31 @@ public class EnemyHealth : MonoBehaviour
         }
 
         // Start the death visual routine (死体としてその場に残る)
-        StartCoroutine(DeathAnimationRoutine());
+        StartCoroutine(DeathAnimationRoutine(hasDeathAnimation));
     }
 
-    private System.Collections.IEnumerator DeathAnimationRoutine()
+    /// <summary>
+    /// 指定した名前のパラメータがAnimatorに存在するかを確認する
+    /// </summary>
+    private bool HasParameter(Animator anim, string paramName)
     {
+        foreach (AnimatorControllerParameter param in anim.parameters)
+        {
+            if (param.name == paramName) return true;
+        }
+        return false;
+    }
+
+    private System.Collections.IEnumerator DeathAnimationRoutine(bool hasDeathAnimation)
+    {
+        // 専用の死亡アニメーション（Hurtクリップ等）がある場合は、そちらの再生に任せる。
+        // 回転・振動・赤化の汎用演出は行わない（Animatorも無効化しないため、
+        // アニメーションはそのまま最終フレームで静止する）。
+        if (hasDeathAnimation)
+        {
+            yield break;
+        }
+
         // 先に元の位置を記憶
         originalLocalPosition = transform.localPosition;
 

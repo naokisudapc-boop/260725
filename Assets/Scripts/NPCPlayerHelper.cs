@@ -35,6 +35,8 @@ public class NPCPlayerHelper : MonoBehaviour
     [Header("Attack Command Settings")]
     [Tooltip("味方への攻撃指示キー（ThiefNPCのattackCommandKeyと同じQキーを共有）")]
     [SerializeField] private KeyCode _attackCommandKey = KeyCode.Q;
+    [Tooltip("敵が見つからずプレイヤーへ集合する際、これ以上は近づかず停止する距離（ThiefNPCのgatherStopDistance相当）")]
+    [SerializeField] private float _gatherStopDistance = 1.5f;
 
     private Rigidbody2D _rb;
     private Animator _anim;
@@ -600,7 +602,7 @@ public class NPCPlayerHelper : MonoBehaviour
 
         float distance = Vector2.Distance(transform.position, _playerTransform.position);
 
-        if (distance <= _attackRange)
+        if (distance <= _gatherStopDistance)
         {
             // プレイヤーの近くまで来たら停止して待機（次の索敵で敵が見つかれば戦闘へ移行）
             if (_rb != null) _rb.linearVelocity = Vector2.zero;

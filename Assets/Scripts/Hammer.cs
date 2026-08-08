@@ -4,7 +4,7 @@ using System.Collections;
 public class Hammer : MonoBehaviour
 {
     [Header("Rotation Settings")]
-    [SerializeField] private float rotationSpeed = 720f; // 1秒間に回転する角度
+    [SerializeField] private float rotationSpeed = 1440f; // 1秒間に回転する角度（PlayerAxe.csと同じ値に統一）
 
     [Header("Sprite Settings")]
     [SerializeField] public Sprite turuhashiSprite; // ツルハシスプライト

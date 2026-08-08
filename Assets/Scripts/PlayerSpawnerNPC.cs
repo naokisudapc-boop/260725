@@ -8,7 +8,8 @@ public class PlayerSpawnerNPC : MonoBehaviour
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private GameObject girlPrefab; // 女008_一般人 プレハブ（Playerを呼べる特別な女の子）
     [SerializeField] private RuntimeAnimatorController correctPlayerController; // 正しい Player 用 Animator Controller
-    private Transform spawnPlace;
+    [Tooltip("新しいキャラクターがスポーンする位置。未設定の場合は自動的に鍛冶屋（aesthetic (1)）の位置、それも見つからなければ自身の位置が使われる")]
+    [SerializeField] private Transform spawnPlace;
 
     [Header("Interaction Settings")]
     [SerializeField] private float interactRange = 3.0f;
@@ -33,25 +34,31 @@ public class PlayerSpawnerNPC : MonoBehaviour
         GameObject playerObj = GameObject.FindWithTag("Player");
         if (playerObj != null) playerTransform = playerObj.transform;
 
-        // 出現位置を "aesthetic (1)"（鍛冶屋）に設定。見つからない場合は
-        // フォールバックとしてこの女性NPC自身の位置を使用する。
-        GameObject blacksmithObj = GameObject.Find("aesthetic (1)");
-        if (blacksmithObj != null)
+        // 出現位置がInspectorで未設定の場合のみ、自動的に "aesthetic (1)"（鍛冶屋）を探す。
+        // 見つからない場合はフォールバックとしてこの女性NPC自身の位置を使用する。
+        if (spawnPlace == null)
         {
-            spawnPlace = blacksmithObj.transform;
-        }
-        else
-        {
-            Debug.LogWarning("[PlayerSpawnerNPC] 'aesthetic (1)' が見つからないため、自身の位置をスポーン地点にします。");
-            spawnPlace = transform;
+            GameObject blacksmithObj = GameObject.Find("aesthetic (1)");
+            if (blacksmithObj != null)
+            {
+                spawnPlace = blacksmithObj.transform;
+            }
+            else
+            {
+                Debug.LogWarning("[PlayerSpawnerNPC] 'aesthetic (1)' が見つからないため、自身の位置をスポーン地点にします。");
+                spawnPlace = transform;
+            }
         }
 
         if (playerPrefab == null)
         {
             PlayerSpawnerNPC[] allSpawners = Object.FindObjectsByType<PlayerSpawnerNPC>();
+            string mySpeciesName = GetSpeciesName(gameObject.name);
             foreach (var spawner in allSpawners)
             {
-                if (!spawner.gameObject.name.Contains("(Clone)") && spawner.playerPrefab != null)
+                if (!spawner.gameObject.name.Contains("(Clone)")
+                    && spawner.playerPrefab != null
+                    && GetSpeciesName(spawner.gameObject.name) == mySpeciesName)
                 {
                     this.playerPrefab = spawner.playerPrefab;
                     break;
@@ -62,15 +69,44 @@ public class PlayerSpawnerNPC : MonoBehaviour
         if (girlPrefab == null)
         {
             PlayerSpawnerNPC[] allSpawners = Object.FindObjectsByType<PlayerSpawnerNPC>();
+            string mySpeciesName = GetSpeciesName(gameObject.name);
             foreach (var spawner in allSpawners)
             {
-                if (!spawner.gameObject.name.Contains("(Clone)") && spawner.girlPrefab != null)
+                if (!spawner.gameObject.name.Contains("(Clone)")
+                    && spawner.girlPrefab != null
+                    && GetSpeciesName(spawner.gameObject.name) == mySpeciesName)
                 {
                     this.girlPrefab = spawner.girlPrefab;
                     break;
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// GameObject名から「種族名（プレハブの素の名前）」を取り出す。
+    /// 例："Girl_Clone_12_女008_一般人" → "女008_一般人"、"sample033_1" → "sample033_1"。
+    /// これにより、女性NPCの種類ごとに異なる Player Prefab / Girl Prefab の組み合わせを
+    /// 設定していても、Start() のフォールバック検索で別種族の設定を誤って
+    /// 借りてしまわないようにする（例：sample033_1専用のBowManNPC/sample033_1ペアが、
+    /// 女008_一般人側のPlayer/女008ペアに混ざってしまうのを防ぐ）。
+    /// </summary>
+    private static string GetSpeciesName(string objectName)
+    {
+        string n = objectName.Replace("(Clone)", "").Trim();
+        // "Girl_Clone_12_女008_一般人" や "PlayerHelper_Clone_3_NPC_Player_Helper" のような
+        // "何か_Clone_数字_元の名前" という命名規則から、末尾の元の名前部分だけを取り出す
+        int cloneIdx = n.IndexOf("_Clone_");
+        if (cloneIdx >= 0)
+        {
+            string afterClone = n.Substring(cloneIdx + "_Clone_".Length);
+            int nextUnderscore = afterClone.IndexOf('_');
+            if (nextUnderscore >= 0 && nextUnderscore + 1 < afterClone.Length)
+            {
+                return afterClone.Substring(nextUnderscore + 1);
+            }
+        }
+        return n;
     }
 
     void Update()
@@ -217,14 +253,27 @@ public class PlayerSpawnerNPC : MonoBehaviour
             GameObject newPlayer = Instantiate(playerPrefab, spawnPlace.position, Quaternion.identity);
 
             int cloneCount = Object.FindObjectsByType<PlayerSpawnerNPC>().Length;
-            newPlayer.name = $"PlayerHelper_Clone_{cloneCount}_{newPlayer.name.Replace("(Clone)", "")}";
 
             // NPC 仕様の Player ヘルパーは、味方（Ally）として扱う
             newPlayer.tag = "Ally";
 
-            // 正しい NPC 用 Animator Controller を強制的に上書き代入。
-            // Unity の自動生成や他処理による上書きを力技でねじ伏せる。
-            ForceAssignPlayerController(newPlayer);
+            // NPCPlayerHelper（操作キャラクター交代の対象になる後継NPC）の場合のみ、
+            // Player専用のセットアップ（Animator Controllerの強制上書き等）を行う。
+            // BowManNPC等、それ以外の味方プレハブがこの枠に入っている場合は
+            // 専用のAnimator Controllerを壊さないよう、このセットアップをスキップする。
+            NPCPlayerHelper helperComponent = newPlayer.GetComponent<NPCPlayerHelper>();
+            if (helperComponent != null)
+            {
+                newPlayer.name = $"PlayerHelper_Clone_{cloneCount}_{newPlayer.name.Replace("(Clone)", "")}";
+
+                // 正しい NPC 用 Animator Controller を強制的に上書き代入。
+                // Unity の自動生成や他処理による上書きを力技でねじ伏せる。
+                ForceAssignPlayerController(newPlayer);
+            }
+            else
+            {
+                newPlayer.name = $"Ally_Clone_{cloneCount}_{newPlayer.name.Replace("(Clone)", "")}";
+            }
 
             // 衝突時のZ軸回転を完全にロック
             Rigidbody2D playerRb = newPlayer.GetComponent<Rigidbody2D>();
@@ -249,7 +298,7 @@ public class PlayerSpawnerNPC : MonoBehaviour
                 GameManager.Instance.RecountPopulation();
             }
 
-            Debug.Log($"[PlayerSpawnerNPC] プレイヤーをスポーンしました: {newPlayer.name}");
+            Debug.Log($"[PlayerSpawnerNPC] 味方をスポーンしました: {newPlayer.name}");
         }
         else
         {
