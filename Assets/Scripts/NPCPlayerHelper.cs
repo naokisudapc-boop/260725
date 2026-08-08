@@ -36,7 +36,7 @@ public class NPCPlayerHelper : MonoBehaviour
     [Tooltip("味方への攻撃指示キー（ThiefNPCのattackCommandKeyと同じQキーを共有）")]
     [SerializeField] private KeyCode _attackCommandKey = KeyCode.Q;
     [Tooltip("敵が見つからずプレイヤーへ集合する際、これ以上は近づかず停止する距離（ThiefNPCのgatherStopDistance相当）")]
-    [SerializeField] private float _gatherStopDistance = 1.5f;
+    [SerializeField] private float _gatherStopDistance = 3.0f;
 
     private Rigidbody2D _rb;
     private Animator _anim;
@@ -52,6 +52,10 @@ public class NPCPlayerHelper : MonoBehaviour
     private bool _isCommandedToAttack = false;
     private bool _isGatheringToPlayer = false;
     private Transform _playerTransform;
+
+    // 複数のNPCが同時に集合する際、全員がプレイヤーの座標そのものへ密集して
+    // 押し合いにならないよう、各インスタンス固有の集合角度（円周上の担当位置）を持たせる
+    private float _gatherAngleOffsetDeg;
 
     // プレイヤー死亡時に後継キャラクター（新しい操作対象）として選出されたかを示すフラグ
     [HideInInspector] public bool isSuccessor = false;
@@ -72,6 +76,10 @@ public class NPCPlayerHelper : MonoBehaviour
         _rb = GetComponent<Rigidbody2D>();
         // Animator が子オブジェクトにある場合も考慮し、InChildren で取得する
         _anim = GetComponentInChildren<Animator>();
+
+        // このインスタンス固有の集合角度を決定する（黄金角を使って複数体でも
+        // 均等に分散させ、同じ座標に密集しないようにする）
+        _gatherAngleOffsetDeg = (GetInstanceID() * 137.5f) % 360f;
 
         // 初期化の最終地点で、正しい NPC 用コントローラーを強制的に上書き代入。
         if (_anim != null && correctPlayerController != null)
@@ -144,6 +152,9 @@ public class NPCPlayerHelper : MonoBehaviour
     {
         _rb = GetComponent<Rigidbody2D>();
         _anim = GetComponentInChildren<Animator>();
+
+        // このインスタンス固有の集合角度を決定する（Start()と同じロジック）
+        _gatherAngleOffsetDeg = (GetInstanceID() * 137.5f) % 360f;
 
         // 初期化の最終地点で、正しい NPC 用コントローラーを強制的に上書き代入。
         if (_anim != null && correctPlayerController != null)
@@ -600,9 +611,17 @@ public class NPCPlayerHelper : MonoBehaviour
             }
         }
 
-        float distance = Vector2.Distance(transform.position, _playerTransform.position);
+        // プレイヤーの座標そのものではなく、このNPC固有の角度でプレイヤーを取り囲む
+        // 位置（担当スポット）を目標にする。複数体が同時に集合しても、同じ座標に
+        // 密集して押し合いになるのを防ぐため。
+        Vector2 offsetDir = new Vector2(
+            Mathf.Cos(_gatherAngleOffsetDeg * Mathf.Deg2Rad),
+            Mathf.Sin(_gatherAngleOffsetDeg * Mathf.Deg2Rad));
+        Vector3 gatherTargetPos = _playerTransform.position + (Vector3)(offsetDir * _gatherStopDistance);
 
-        if (distance <= _gatherStopDistance)
+        float distance = Vector2.Distance(transform.position, gatherTargetPos);
+
+        if (distance <= 0.3f)
         {
             // プレイヤーの近くまで来たら停止して待機（次の索敵で敵が見つかれば戦闘へ移行）
             if (_rb != null) _rb.linearVelocity = Vector2.zero;
@@ -611,8 +630,8 @@ public class NPCPlayerHelper : MonoBehaviour
         }
 
         if (_rb != null) _rb.linearVelocity = Vector2.zero;
-        Vector3 moveDirection = ((Vector3)_playerTransform.position - transform.position).normalized;
-        Vector3 nextPosition = Vector2.MoveTowards(transform.position, _playerTransform.position, _combatMoveSpeed * Time.deltaTime);
+        Vector3 moveDirection = (gatherTargetPos - transform.position).normalized;
+        Vector3 nextPosition = Vector2.MoveTowards(transform.position, gatherTargetPos, _combatMoveSpeed * Time.deltaTime);
         transform.position = nextPosition;
         UpdateCombatAnimator(moveDirection, _combatMoveSpeed);
     }

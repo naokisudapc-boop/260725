@@ -45,6 +45,22 @@ public class BowManNPC : MonoBehaviour
     public float retreatMoveSpeed = 1.5f;
     public float retreatStopDistance = 0.5f;
 
+    [Header("Ally Command Settings（Allyタグのときのみ使用）")]
+    [Tooltip("味方への攻撃指示キー（ThiefNPC/NPCPlayerHelperと同じQキーを共有）")]
+    [SerializeField] private KeyCode attackCommandKey = KeyCode.Q;
+    [SerializeField] private KeyCode cancelCommandKey = KeyCode.X;
+    [Tooltip("操作キャラクターの入力に同期して移動する速度")]
+    [SerializeField] private float syncMoveSpeed = 3f;
+    [Tooltip("攻撃指示で敵が見つからないとき、操作キャラクターへ集合する際の移動速度")]
+    [SerializeField] private float gatherMoveSpeed = 4f;
+    [Tooltip("集合の際、操作キャラクターからこの距離以内まで近づいたら停止する")]
+    [SerializeField] private float gatherStopDistance = 2f;
+
+    private Vector2 syncMoveInput;
+    private Transform playerTransform;
+    private bool isCommandedToAttack = false;
+    private bool isGatheringToPlayer = false;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -96,7 +112,22 @@ public class BowManNPC : MonoBehaviour
             }
             return;
         }
-        
+
+        if (gameObject.CompareTag("Ally"))
+        {
+            UpdateAsAlly();
+        }
+        else
+        {
+            UpdateAsEnemy();
+        }
+    }
+
+    /// <summary>
+    /// 敵（Enemyタグ）としての通常挙動。従来のロジックのまま。
+    /// </summary>
+    private void UpdateAsEnemy()
+    {
         FindTarget();
         
         // ターゲットがいない場合：拠点から離れていれば拠点付近まで自動で戻る
@@ -112,33 +143,52 @@ public class BowManNPC : MonoBehaviour
         // 射撃中の場合は何もしない
         if (isShooting) return;
 
-        float distance = Vector2.Distance(transform.position, target.position);
-        Vector2 moveDirection = Vector2.zero;
-        float currentSpeed = moveSpeed; // 適用するスピード
+        ExecuteTargetedMovement();
+    }
 
-        if (distance < keepDistanceRange && Vector2.Distance(transform.position, _homePosition) < leashRange)
+    /// <summary>
+    /// 味方（Allyタグ）としての挙動。ThiefNPC/NPCPlayerHelperと同じく、
+    /// Qキーでの攻撃指示・敵不在時のプレイヤーへの集合・平常時のプレイヤー入力同期を行う。
+    /// </summary>
+    private void UpdateAsAlly()
+    {
+        if (Input.GetKeyDown(attackCommandKey))
         {
-            // 近づかれすぎたので逃げる（後退速度を適用）
-            // ただし拠点から leashRange 以上離れている場合は後退せず踏みとどまる
-            moveDirection = (transform.position - target.position).normalized;
-            currentSpeed = retreatBackSpeed; // ★ ここで遅い後退速度に切り替える
-        }
-        else if (distance > attackRange)
-        {
-            // 遠いので追いかける
-            moveDirection = (target.position - transform.position).normalized;
-            currentSpeed = moveSpeed;
-        }
-        else
-        {
-            // 攻撃射程内、または後退の上限（leashRange）に達した場合：
-            // 停止して射撃開始（近づかれすぎていても、これ以上は下がらず応戦する）
-            moveDirection = Vector2.zero;
-            StartCoroutine(ShootRoutine());
+            CommandAttack();
         }
 
-        Move(moveDirection, currentSpeed); // ★ スピードを引数に渡すように変更
-        UpdateAnimation(moveDirection);
+        if (Input.GetKeyDown(cancelCommandKey))
+        {
+            CancelAttackCommand();
+        }
+
+        FindHostileTarget();
+
+        // 1. 敵を発見した場合（戦闘優先）
+        if (target != null)
+        {
+            isGatheringToPlayer = false; // 戦闘に入るので集合は解除
+            if (isShooting) return;
+            ExecuteTargetedMovement();
+            return;
+        }
+
+        if (isShooting) return;
+
+        // 2. 攻撃コマンド中だが敵が見つからず、プレイヤーに集合中の場合
+        if (isGatheringToPlayer)
+        {
+            ExecuteGatheringAI();
+            return;
+        }
+
+        // 3. 索敵範囲内に敵がいなくなったら自動で攻撃指示モードをオフにして追従へ戻る
+        if (isCommandedToAttack)
+        {
+            isCommandedToAttack = false;
+        }
+
+        SyncMoveWithPlayer();
     }
 
     // 退却中の移動・アニメーションは ArrowHitHandler.RetreatToBlacksmith() が単独で担当する
@@ -264,6 +314,129 @@ public class BowManNPC : MonoBehaviour
         target = closestTarget != null ? closestTarget.transform : null;
     }
 
+    /// <summary>
+    /// target に向けた距離ベースの移動判断（近すぎれば後退、遠ければ追跡、射程内なら射撃）。
+    /// 敵・味方どちらのBowManNPCも共通で使用する。
+    /// </summary>
+    private void ExecuteTargetedMovement()
+    {
+        float distance = Vector2.Distance(transform.position, target.position);
+        Vector2 moveDirection = Vector2.zero;
+        float currentSpeed = moveSpeed;
+
+        if (distance < keepDistanceRange && Vector2.Distance(transform.position, _homePosition) < leashRange)
+        {
+            // 近づかれすぎたので逃げる（後退速度を適用）
+            // ただし拠点から leashRange 以上離れている場合は後退せず踏みとどまる
+            moveDirection = (transform.position - target.position).normalized;
+            currentSpeed = retreatBackSpeed;
+        }
+        else if (distance > attackRange)
+        {
+            // 遠いので追いかける
+            moveDirection = (target.position - transform.position).normalized;
+            currentSpeed = moveSpeed;
+        }
+        else
+        {
+            // 攻撃射程内、または後退の上限（leashRange）に達した場合：
+            // 停止して射撃開始（近づかれすぎていても、これ以上は下がらず応戦する）
+            moveDirection = Vector2.zero;
+            StartCoroutine(ShootRoutine());
+        }
+
+        Move(moveDirection, currentSpeed);
+        UpdateAnimation(moveDirection);
+    }
+
+    /// <summary>
+    /// Qキーで攻撃指示を出す。ThiefNPC.CommandAttack()と同じ考え方。
+    /// 即座に索敵し、敵が見つからなければ操作キャラクターへ集合する。
+    /// </summary>
+    public void CommandAttack()
+    {
+        isCommandedToAttack = true;
+
+        FindHostileTarget();
+
+        if (target == null)
+        {
+            FindPlayerTransform();
+            if (playerTransform != null)
+            {
+                isGatheringToPlayer = true;
+            }
+        }
+        else
+        {
+            isGatheringToPlayer = false;
+        }
+    }
+
+    /// <summary>
+    /// 攻撃指示をキャンセルする。
+    /// </summary>
+    public void CancelAttackCommand()
+    {
+        isCommandedToAttack = false;
+        isGatheringToPlayer = false;
+        target = null;
+    }
+
+    private void FindPlayerTransform()
+    {
+        GameObject playerObj = GameObject.FindWithTag("Player");
+        if (playerObj != null)
+        {
+            playerTransform = playerObj.transform;
+        }
+    }
+
+    /// <summary>
+    /// 攻撃指示中に敵が見つからない場合、操作キャラクターへ集合する。
+    /// gatherStopDistance以内まで近づいたら停止する（ThiefNPC.ExecuteGatheringAI()と同じ考え方）。
+    /// </summary>
+    private void ExecuteGatheringAI()
+    {
+        if (playerTransform == null)
+        {
+            FindPlayerTransform();
+            if (playerTransform == null)
+            {
+                isGatheringToPlayer = false;
+                return;
+            }
+        }
+
+        float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
+
+        if (distanceToPlayer <= gatherStopDistance)
+        {
+            isGatheringToPlayer = false;
+            isCommandedToAttack = false;
+            Move(Vector2.zero, 0f);
+            UpdateAnimation(Vector2.zero);
+            return;
+        }
+
+        Vector2 moveDirection = ((Vector2)playerTransform.position - (Vector2)transform.position).normalized;
+        Move(moveDirection, gatherMoveSpeed);
+        UpdateAnimation(moveDirection);
+    }
+
+    /// <summary>
+    /// 敵がおらず攻撃指示もないとき、操作キャラクターの移動入力に同期して移動する
+    /// （ThiefNPC.GetPlayerInputSync()と同じ考え方）。
+    /// </summary>
+    private void SyncMoveWithPlayer()
+    {
+        float x = Input.GetAxisRaw("Horizontal");
+        float y = Input.GetAxisRaw("Vertical");
+        syncMoveInput = new Vector2(x, y).normalized;
+
+        Move(syncMoveInput, syncMoveSpeed);
+        UpdateAnimation(syncMoveInput);
+    }
     private void Move(Vector2 direction, float speed)
     {
         rb.linearVelocity = direction * speed; // ★ 指定されたスピードで移動
