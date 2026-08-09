@@ -33,6 +33,16 @@ public class BowManNPC : MonoBehaviour
     private Animator animator;
     private Rigidbody2D rb;
     private bool isShooting = false;
+
+    [Header("Manual Aiming (操作キャラクターになったとき用)")]
+    [Tooltip("マウスドラッグ中に表示する予測射線の長さ")]
+    [SerializeField] private float aimLineLength = 6f;
+    [Tooltip("射線プレビュー用のLineRenderer。未設定なら自動生成する")]
+    [SerializeField] private LineRenderer aimLineRenderer;
+
+    private CharacterHealth _characterHealth;
+    private bool _isAiming = false;
+    private Vector2 _aimDirection = Vector2.right;
     
     // 矢の被弾処理用コンポーネント
     private ArrowHitHandler arrowHitHandler;
@@ -92,6 +102,52 @@ public class BowManNPC : MonoBehaviour
         {
             arrowSpawnPoint = transform;
         }
+
+        // 味方（Allyタグ）の場合のみ、GameManagerの操作キャラクター交代システムが
+        // 候補として見つけられるよう CharacterHealth を用意する。
+        // 敵（Enemyタグ）は従来通り EnemyHealth のみを使用し、CharacterHealth は追加しない。
+        if (gameObject.CompareTag("Ally"))
+        {
+            EnsureCharacterHealthForAlly();
+            EnsureAimLineRenderer();
+        }
+    }
+
+    /// <summary>
+    /// 味方BowManNPCがGameManagerの操作キャラクター候補（CharacterHealth検索）に
+    /// 含まれるよう、CharacterHealthを自動的にアタッチ・有効化する。
+    /// ThiefNPC/NPCPlayerHelperと同じ仕組みで操作キャラクター交代できるようにするため。
+    /// </summary>
+    private void EnsureCharacterHealthForAlly()
+    {
+        _characterHealth = GetComponent<CharacterHealth>();
+        if (_characterHealth == null)
+        {
+            _characterHealth = gameObject.AddComponent<CharacterHealth>();
+        }
+        _characterHealth.isPlayer = false;
+        _characterHealth.isControllable = false;
+        _characterHealth.enabled = true;
+    }
+
+    /// <summary>
+    /// 矢の予測射線を表示するためのLineRendererを用意する（未設定なら自動生成）。
+    /// </summary>
+    private void EnsureAimLineRenderer()
+    {
+        if (aimLineRenderer != null) return;
+
+        GameObject lineObj = new GameObject("AimLine");
+        lineObj.transform.SetParent(transform, false);
+        aimLineRenderer = lineObj.AddComponent<LineRenderer>();
+        aimLineRenderer.positionCount = 2;
+        aimLineRenderer.startWidth = 0.05f;
+        aimLineRenderer.endWidth = 0.05f;
+        aimLineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        aimLineRenderer.startColor = new Color(1f, 1f, 1f, 0.8f);
+        aimLineRenderer.endColor = new Color(1f, 1f, 1f, 0.2f);
+        aimLineRenderer.sortingOrder = 100;
+        aimLineRenderer.enabled = false;
     }
 
     void Update()
@@ -113,7 +169,11 @@ public class BowManNPC : MonoBehaviour
             return;
         }
 
-        if (gameObject.CompareTag("Ally"))
+        if (_characterHealth != null && _characterHealth.isPlayer)
+        {
+            UpdateAsControlledPlayer();
+        }
+        else if (gameObject.CompareTag("Ally"))
         {
             UpdateAsAlly();
         }
@@ -121,6 +181,83 @@ public class BowManNPC : MonoBehaviour
         {
             UpdateAsEnemy();
         }
+    }
+
+    /// <summary>
+    /// 操作キャラクターになっているときの挙動。移動は NewMonoBehaviourScript が担当するので、
+    /// ここではマウスドラッグでの照準・矢の発射のみを扱う。
+    /// 左クリック押下でドラッグ開始、押している間は予測射線を表示、離した瞬間に発射する。
+    /// </summary>
+    private void UpdateAsControlledPlayer()
+    {
+        if (Input.GetMouseButtonDown(0) && !isShooting)
+        {
+            _isAiming = true;
+            if (aimLineRenderer != null) aimLineRenderer.enabled = true;
+        }
+
+        if (_isAiming && Input.GetMouseButton(0))
+        {
+            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mouseWorldPos.z = arrowSpawnPoint.position.z;
+
+            Vector2 dir = ((Vector2)mouseWorldPos - (Vector2)arrowSpawnPoint.position);
+            if (dir.sqrMagnitude > 0.0001f)
+            {
+                _aimDirection = dir.normalized;
+            }
+
+            // アニメーションの向きを照準方向に合わせる
+            if (animator != null)
+            {
+                animator.SetFloat("InputX", 0);
+                animator.SetFloat("InputY", 0);
+                animator.SetFloat("Speed", 0);
+                animator.SetFloat("LastInputX", _aimDirection.x);
+                animator.SetFloat("LastInputY", _aimDirection.y);
+            }
+
+            // 予測射線を更新
+            if (aimLineRenderer != null)
+            {
+                aimLineRenderer.SetPosition(0, arrowSpawnPoint.position);
+                aimLineRenderer.SetPosition(1, arrowSpawnPoint.position + (Vector3)(_aimDirection * aimLineLength));
+            }
+        }
+
+        if (_isAiming && Input.GetMouseButtonUp(0))
+        {
+            _isAiming = false;
+            if (aimLineRenderer != null) aimLineRenderer.enabled = false;
+
+            if (!isShooting)
+            {
+                StartCoroutine(ManualShootRoutine(_aimDirection));
+            }
+        }
+    }
+
+    /// <summary>
+    /// マウスドラッグで指定した方向へ矢を発射する（操作キャラクター用）。
+    /// AIのShootRoutine()と違い、targetではなく明示的な方向を使う。
+    /// </summary>
+    private IEnumerator ManualShootRoutine(Vector2 direction)
+    {
+        isShooting = true;
+        if (rb != null) rb.linearVelocity = Vector2.zero;
+
+        if (animator != null)
+        {
+            animator.SetTrigger("Shooting_Before");
+        }
+
+        yield return new WaitForSeconds(chargeTime);
+
+        if (animator != null) animator.SetTrigger("Shooting_After");
+        SpawnArrow(direction);
+
+        yield return new WaitForSeconds(attackCooldown);
+        isShooting = false;
     }
 
     /// <summary>
@@ -493,17 +630,29 @@ public class BowManNPC : MonoBehaviour
         isShooting = false;
     }
 
-    private void SpawnArrow()
+    private void SpawnArrow(Vector2? overrideDirection = null)
     {
-        if (arrowPrefab != null && arrowSpawnPoint != null && target != null)
+        if (arrowPrefab == null || arrowSpawnPoint == null) return;
+
+        Vector2 dir;
+        if (overrideDirection.HasValue)
         {
-            GameObject arrowObj = Instantiate(arrowPrefab, arrowSpawnPoint.position, Quaternion.identity);
-            Arrow arrow = arrowObj.GetComponent<Arrow>();
-            if (arrow != null)
-            {
-                Vector2 dir = (target.position - arrowSpawnPoint.position).normalized;
-                arrow.SetDirection(dir);
-            }
+            dir = overrideDirection.Value;
+        }
+        else if (target != null)
+        {
+            dir = (target.position - arrowSpawnPoint.position).normalized;
+        }
+        else
+        {
+            return;
+        }
+
+        GameObject arrowObj = Instantiate(arrowPrefab, arrowSpawnPoint.position, Quaternion.identity);
+        Arrow arrow = arrowObj.GetComponent<Arrow>();
+        if (arrow != null)
+        {
+            arrow.SetDirection(dir);
         }
     }
 

@@ -32204,7 +32204,7 @@ GameObject:
   - component: {fileID: 2035053136}
   m_Layer: 0
   m_Name: Swordsman
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -32359,8 +32359,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00fa85292f4e2a3409dffbd40280ce50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
-  maxHealth: 3
-  currentHealth: 0
+  maxHealth: 1
+  currentHealth: 1
   isDead: 0
   shakeDuration: 0.5
   shakeMagnitude: 0.1

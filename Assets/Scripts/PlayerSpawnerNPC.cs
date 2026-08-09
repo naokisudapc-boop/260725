@@ -163,8 +163,16 @@ public class PlayerSpawnerNPC : MonoBehaviour
         // このスポーンで何を生むかを事前に決定（50% で Player / 50% で女の子）
         bool spawnAsPlayer = Random.value < 0.5f;
 
-        // 共通コスト：Food は必ず -1。Wood/Iron は Player の場合のみ消費。
-        if (GameManager.Instance.ConsumeResourcesForSpawn(spawnAsPlayer))
+        // Player枠に入っているプレハブが BowManNPC かどうかで必要資源を切り替える。
+        // 通常の Player 枠（NPCPlayerHelper 等）は Food + Wood + Iron が必要だが、
+        // BowManNPC のスポーンは Food 1 + Wood 1 のみで良い（鉄は不要）。
+        bool isBowManSpawn = spawnAsPlayer && playerPrefab != null && playerPrefab.GetComponent<BowManNPC>() != null;
+
+        bool resourcesConsumed = isBowManSpawn
+            ? GameManager.Instance.ConsumeResourcesForBowManSpawn()
+            : GameManager.Instance.ConsumeResourcesForSpawn(spawnAsPlayer);
+
+        if (resourcesConsumed)
         {
             // 演出後に実際に何をスポーンするかを渡すため、フラグを保持する
             pendingSpawnAsPlayer = spawnAsPlayer;

@@ -74,10 +74,17 @@ MonoBehaviour:
   chargeTime: 0.5
   attackCooldown: 1
   leashRange: 10
+  homeBaseObjectName: Bowyery Workshop
+  returnToBaseStopDistance: 2
   arrowPrefab: {fileID: 4856575382425508897, guid: dfadf7e74a488cd4cb1287155985a781, type: 3}
   arrowSpawnPoint: {fileID: 647684733967696956}
   retreatMoveSpeed: 1.5
   retreatStopDistance: 0.5
+  attackCommandKey: 113
+  cancelCommandKey: 120
+  syncMoveSpeed: 5
+  gatherMoveSpeed: 4
+  gatherStopDistance: 2
 --- !u!212 &4174210703692435140
 SpriteRenderer:
   serializedVersion: 2

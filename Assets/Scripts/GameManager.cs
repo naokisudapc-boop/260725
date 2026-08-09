@@ -222,6 +222,26 @@ public class GameManager : MonoBehaviour
     /// a female NPC (girl) spawns for free (Wood/Iron untouched).
     /// Returns true if the spawn is allowed (enough Food), false otherwise.
     /// </summary>
+    /// <summary>
+    /// BowManNPC専用のスポーンコスト消費：Food 1 + Wood 1（鉄は不要）。
+    /// 通常のPlayer枠スポーン（ConsumeResourcesForSpawn）とは異なり、鉄鉱石を要求しない。
+    /// </summary>
+    public bool ConsumeResourcesForBowManSpawn()
+    {
+        if (currentFoodCount < 1 || currentWoodCount < 1)
+        {
+            return false;
+        }
+
+        currentFoodCount -= 1;
+        currentWoodCount -= 1;
+
+        if (foodText != null) foodText.text = "Food: " + currentFoodCount;
+        UpdateWoodUI();
+
+        return true;
+    }
+
     public bool ConsumeResourcesForSpawn(bool isPlayer)
     {
         // Food is a mandatory common cost for every spawn.
@@ -368,7 +388,8 @@ public class GameManager : MonoBehaviour
                 if (script != this &&
                     script.GetType() != typeof(NewMonoBehaviourScript) &&
                     script.GetType() != typeof(PlayerAttack) &&
-                    script.GetType() != typeof(CharacterHealth))
+                    script.GetType() != typeof(CharacterHealth) &&
+                    script.GetType() != typeof(BowManNPC))
                 {
                     script.enabled = false;
                 }

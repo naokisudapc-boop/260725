@@ -4,7 +4,7 @@ using System.Collections;
 public class PlayerAxe : MonoBehaviour
 {
     [Header("Rotation Settings")]
-    [SerializeField] private float rotationSpeed = -1440f; // 符号を反転してThiefNPCのピッケルと同じ回転方向にする
+    [SerializeField] private float rotationSpeed = 1440f; // 合成順序を修正したので、符号がそのまま画面上の回転方向に対応する
 
     private Collider2D axeCollider;
     private SpriteRenderer spriteRenderer; // ★追加：見た目だけを回すため
@@ -40,11 +40,13 @@ public class PlayerAxe : MonoBehaviour
 
         while (elapsed < duration)
         {
-            // 最初に設定されていた刃の向き（originalRotation）を基準に、
-            // そこからのZ回転として合成する。絶対値で置き換えると、
-            // スイング終了後の姿勢が本来の向きからズレてしまう。
+            // 画面（ワールド）のZ軸を軸に回転させる。originalRotationを基準に
+            // ローカルZ軸で回す（post-multiply）と、originalRotationがX/Y軸を含む
+            // 複雑な向きの場合にローカルZ軸が画面上でどちらを向くか予測できず、
+            // rotationSpeedの符号だけでは狙った回転方向にならないことがある。
+            // pre-multiplyにすることで、常にワールドのZ軸まわりの回転になる。
             currentZRotation += rotationSpeed * Time.deltaTime;
-            transform.localRotation = originalRotation * Quaternion.Euler(0, 0, currentZRotation);
+            transform.localRotation = Quaternion.Euler(0, 0, currentZRotation) * originalRotation;
 
             elapsed += Time.deltaTime;
             yield return null;
