@@ -4,10 +4,11 @@ using System.Collections;
 public class PlayerAxe : MonoBehaviour
 {
     [Header("Rotation Settings")]
-    [SerializeField] private float rotationSpeed = 1440f;
+    [SerializeField] private float rotationSpeed = -1440f; // 符号を反転してThiefNPCのピッケルと同じ回転方向にする
 
     private Collider2D axeCollider;
     private SpriteRenderer spriteRenderer; // ★追加：見た目だけを回すため
+    private Quaternion originalRotation; // 最初に設定されている刃の向き（毎回このスイング前姿勢に戻す）
     private float currentZRotation = 0f;  // ★追加：回転角度の保持用
     private bool isSwinging = false;
 
@@ -15,7 +16,10 @@ public class PlayerAxe : MonoBehaviour
     {
         axeCollider = GetComponent<Collider2D>();
         spriteRenderer = GetComponent<SpriteRenderer>(); // ★追加
-        
+
+        // プレハブで設定されている最初の刃の向きを記憶しておく
+        originalRotation = transform.localRotation;
+
         if (axeCollider != null) axeCollider.enabled = false; // 普段はオフ
     }
 
@@ -36,19 +40,20 @@ public class PlayerAxe : MonoBehaviour
 
         while (elapsed < duration)
         {
-            // ★修正：transform 自体ではなく、スプライトの角度（またはtransformの回転のみ）を回す
-            // 軸がズレないように transform.localRotation のみを安全に回転させます
+            // 最初に設定されていた刃の向き（originalRotation）を基準に、
+            // そこからのZ回転として合成する。絶対値で置き換えると、
+            // スイング終了後の姿勢が本来の向きからズレてしまう。
             currentZRotation += rotationSpeed * Time.deltaTime;
-            transform.localRotation = Quaternion.Euler(0, 0, currentZRotation);
-            
+            transform.localRotation = originalRotation * Quaternion.Euler(0, 0, currentZRotation);
+
             elapsed += Time.deltaTime;
             yield return null;
         }
 
         if (axeCollider != null) axeCollider.enabled = false;
-        
-        // 元の角度（0度）に綺麗に戻す
-        transform.localRotation = Quaternion.identity;
+
+        // 最初に設定されていた刃の向きに正確に戻す（Quaternion.identityではない）
+        transform.localRotation = originalRotation;
         isSwinging = false;
     }
 

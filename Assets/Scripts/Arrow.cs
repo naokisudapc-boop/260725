@@ -84,8 +84,10 @@ public class Arrow : MonoBehaviour
             hitHandler.OnHitByArrow();
         }
 
-        // GameManager の仕組みを使って次のキャラクターに切り替える
-        if (GameManager.Instance != null)
+        // GameManager の仕組みを使って次のキャラクターに切り替える。
+        // ただし、これは「今まさに操作しているキャラクター」に矢が当たった場合のみ行う。
+        // 味方（Allyタグ）に当たっただけでは交代しない（retreat/被弾処理は上のOnHitByArrow()で別途行われる）。
+        if (targetTransform.CompareTag("Player") && GameManager.Instance != null)
         {
             CharacterHealth charHealth = targetTransform.GetComponent<CharacterHealth>();
             if (charHealth != null)
@@ -96,8 +98,8 @@ public class Arrow : MonoBehaviour
             {
                 GameManager.Instance.ReplacePlayer(targetTransform.gameObject);
             }
-        }
 
-        Debug.Log("ターゲットに矢が突き刺さり、GameManager経由で次のキャラクターに切り替えました！");
+            Debug.Log("操作キャラクターに矢が突き刺さり、GameManager経由で次のキャラクターに切り替えました！");
+        }
     }
 }
