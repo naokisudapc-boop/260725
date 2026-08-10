@@ -58,10 +58,17 @@ MonoBehaviour:
   miningTime: 1
   ironOrePrefab: {fileID: 0}
   afterMinedTile: {fileID: 11400000, guid: 6d72a7b9be1b72947bd96e459ebf5c7b, type: 2}
-  detectionRange: 5
+  normalDetectionRange: 5
+  commandedDetectionRange: 15
   attackRange: 1.5
   combatMoveSpeed: 2
+  gatherMoveSpeed: 4
+  gatherStopDistance: 1.5
+  retreatMoveSpeed: 1.5
+  retreatStopDistance: 0.5
   hammerComponent: {fileID: 0}
+  attackCommandKey: 113
+  cancelCommandKey: 120
 --- !u!212 &7504276292800229418
 SpriteRenderer:
   serializedVersion: 2
@@ -232,7 +239,7 @@ MonoBehaviour:
   isPlayer: 0
   isControllable: 1
   isDead: 0
-  shakeDuration: 0.5
+  shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!1 &2622619089355810459
 GameObject:

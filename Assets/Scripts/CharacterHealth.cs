@@ -9,7 +9,7 @@ public class CharacterHealth : MonoBehaviour
     public bool isDead = false;
 
     [Header("Death Animation Settings")]
-    [SerializeField] private float shakeDuration = 0.5f; // ぶるぶるする時間（秒）
+    [SerializeField] private float shakeDuration = 2f; // ぶるぶるする時間（秒）
     [SerializeField] private float shakeMagnitude = 0.1f; // ぶるぶるの強さ
 
     private SpriteRenderer spriteRenderer;

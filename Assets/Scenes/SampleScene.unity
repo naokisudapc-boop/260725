@@ -2634,6 +2634,97 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1855631421}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &461306495
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 461306497}
+  - component: {fileID: 461306496}
+  m_Layer: 0
+  m_Name: aesthetic (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!212 &461306496
+SpriteRenderer:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 461306495}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 21300000, guid: a60d0e4758904dc4c854936a16b88aa5, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 9.11, y: 8.89}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
+--- !u!4 &461306497
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 461306495}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -109.61, y: -84.35, z: 0}
+  m_LocalScale: {x: 0.64055, y: 0.64055, z: 0.64055}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -5804,7 +5895,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArrowHitHandler
   retreatMoveSpeed: 1.5
   retreatStopDistance: 0.5
-  blacksmithPosition: {fileID: 0}
+  blacksmithPosition: {fileID: 461306497}
 --- !u!114 &908810529
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5820,7 +5911,7 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
-  shakeDuration: 0.5
+  shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!4 &908810530
 Transform:
@@ -6670,7 +6761,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArrowHitHandler
   retreatMoveSpeed: 1.5
   retreatStopDistance: 0.5
-  blacksmithPosition: {fileID: 0}
+  blacksmithPosition: {fileID: 461306497}
 --- !u!114 &958527894
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6686,7 +6777,7 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
-  shakeDuration: 0.5
+  shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!4 &958527895
 Transform:
@@ -16588,7 +16679,7 @@ MonoBehaviour:
   isPlayer: 1
   isControllable: 1
   isDead: 0
-  shakeDuration: 0.5
+  shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!114 &1506919087
 MonoBehaviour:
@@ -42788,7 +42879,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArrowHitHandler
   retreatMoveSpeed: 1.5
   retreatStopDistance: 0.5
-  blacksmithPosition: {fileID: 0}
+  blacksmithPosition: {fileID: 461306497}
 --- !u!114 &2034045953
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -42804,7 +42895,7 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
-  shakeDuration: 0.5
+  shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!4 &2034045954
 Transform:
@@ -42981,7 +43072,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArrowHitHandler
   retreatMoveSpeed: 1.5
   retreatStopDistance: 0.5
-  blacksmithPosition: {fileID: 0}
+  blacksmithPosition: {fileID: 461306497}
 --- !u!114 &2035053135
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -42997,7 +43088,7 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
-  shakeDuration: 0.5
+  shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!60 &2035053136
 PolygonCollider2D:
@@ -43296,7 +43387,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArrowHitHandler
   retreatMoveSpeed: 1.5
   retreatStopDistance: 0.5
-  blacksmithPosition: {fileID: 0}
+  blacksmithPosition: {fileID: 461306497}
 --- !u!114 &2072143037
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -43312,7 +43403,7 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
-  shakeDuration: 0.5
+  shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!4 &2072143038
 Transform:
@@ -43650,6 +43741,10 @@ PrefabInstance:
       propertyPath: interactKey
       value: 102
       objectReference: {fileID: 0}
+    - target: {fileID: 2759210847472858189, guid: 9e37604ef0d8d214ba9e005df91026cb, type: 3}
+      propertyPath: shakeDuration
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3174487954302195057, guid: 9e37604ef0d8d214ba9e005df91026cb, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -43905,6 +44000,10 @@ PrefabInstance:
     - target: {fileID: 1494725904620342444, guid: de5d1910c71257949aec3018b1e1a72b, type: 3}
       propertyPath: m_Name
       value: BowMan1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1793728570821879869, guid: de5d1910c71257949aec3018b1e1a72b, type: 3}
+      propertyPath: shakeDuration
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2365332875135738896, guid: de5d1910c71257949aec3018b1e1a72b, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.size
@@ -44279,7 +44378,7 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 0
   isDead: 0
-  shakeDuration: 0.5
+  shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
@@ -44313,3 +44412,4 @@ SceneRoots:
   - {fileID: 1490140337}
   - {fileID: 1952778010}
   - {fileID: 1347865493}
+  - {fileID: 461306497}

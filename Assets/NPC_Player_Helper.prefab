@@ -55,7 +55,7 @@ MonoBehaviour:
   isPlayer: 0
   isControllable: 1
   isDead: 0
-  shakeDuration: 0.5
+  shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!114 &-3774695948409603285
 MonoBehaviour:
@@ -92,6 +92,13 @@ MonoBehaviour:
   _chopDuration: 2
   _treeTag: Tree
   _treesRootName: Trees
+  _combatDetectionRange: 5
+  _commandedDetectionRange: 15
+  _attackRange: 1.5
+  _combatMoveSpeed: 2.5
+  _attackCooldown: 1.2
+  _attackCommandKey: 113
+  _gatherStopDistance: 3
   isSuccessor: 0
   isDead: 0
 --- !u!212 &1000000000000000004
