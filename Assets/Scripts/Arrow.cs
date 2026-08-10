@@ -13,6 +13,10 @@ public class Arrow : MonoBehaviour
     [Tooltip("矢の滞空時間（秒）。命中したかどうかに関わらず、この時間が経過すると自動的に消える")]
     [SerializeField] private float lifeTime = 5f;
 
+    [Header("Penetration Settings")]
+    [Tooltip("命中した瞬間の位置から、矢の向きにさらに進める距離。値を大きくするほど深く突き刺さり、先端がスプライトを貫通して見える")]
+    [SerializeField] private float penetrationDepth = 0.3f;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -88,10 +92,14 @@ public void SetDirection(Vector2 dir)
             col.enabled = false;
         }
 
-        // 矢の中心を命中対象の中心に合わせる。
-        // これにより先端側はスプライト内部へ入り、後端側は外側に残る。
+        // 命中した瞬間の位置（実際にぶつかった場所）から、さらに矢の向きへ
+        // penetrationDepth 分だけ進める。これにより、軸の中央付近が命中位置に来て、
+        // 先端側はスプライトを貫通し、後端側は外に残る見た目になる。
+        // （対象のpivot位置に単純にスナップすると、pivotが足元などにあるキャラクターの
+        // 場合に実際の命中位置とズレてしまうため、この方式にしている）
+        transform.position += (Vector3)(direction * penetrationDepth);
+
         transform.SetParent(targetTransform);
-        transform.position = targetTransform.position;
 
         // ArrowHitHandlerがある場合はそれを呼び出す
         ArrowHitHandler hitHandler = targetTransform.GetComponent<ArrowHitHandler>();

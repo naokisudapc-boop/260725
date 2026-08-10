@@ -528,6 +528,7 @@ GameObject:
   - component: {fileID: 99485009}
   - component: {fileID: 99485008}
   - component: {fileID: 99485007}
+  - component: {fileID: 99485011}
   m_Layer: 0
   m_Name: sample012_1
   m_TagString: Untagged
@@ -679,6 +680,33 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!50 &99485011
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 99485006}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 20
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_GravityScale: 0
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 0
 --- !u!1 &138132504
 GameObject:
   m_ObjectHideFlags: 0
@@ -3041,7 +3069,7 @@ MonoBehaviour:
   target: {fileID: 1506919063}
   _minX: -100
   _maxX: 10
-  _minY: -100
+  _minY: -500
   _maxy: 10
 --- !u!1 &519708461
 GameObject:
@@ -5057,7 +5085,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 10
+  m_Mass: 20
   m_LinearDamping: 20
   m_AngularDamping: 0.05
   m_GravityScale: 0
@@ -17394,7 +17422,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 10
+  m_Mass: 20
   m_LinearDamping: 20
   m_AngularDamping: 0.05
   m_GravityScale: 0
@@ -44062,6 +44090,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1923410950681716938, guid: f266639fb01130645aa10e22009800de, type: 3}
+      propertyPath: m_Mass
+      value: 20
+      objectReference: {fileID: 0}
     - target: {fileID: 2998524175424998288, guid: f266639fb01130645aa10e22009800de, type: 3}
       propertyPath: femaleSpawnRateAttribute
       value: 30

@@ -47,6 +47,10 @@ public class BowManNPC : MonoBehaviour
     private int _currentArrowCount;
     private bool _isResupplying = false;
 
+    [Header("Friendly Fire Avoidance（味方限定）")]
+    [Tooltip("射線上に味方がいて発射を見送ったとき、射手自身を射線に垂直な方向へどれだけ移動させるか")]
+    [SerializeField] private float sidestepDistance = 1.0f;
+
     [Header("Manual Aiming (操作キャラクターになったとき用)")]
     [Tooltip("マウスドラッグ中に表示する予測射線の長さ")]
     [SerializeField] private float aimLineLength = 6f;
@@ -667,17 +671,17 @@ public class BowManNPC : MonoBehaviour
         animator.SetFloat("Speed", moveInput.magnitude);
     }
 
-        private bool IsAllyBlockingShot()
+        private Transform FindAllyBlockingShot()
     {
         if (!gameObject.CompareTag("Ally") || target == null || arrowSpawnPoint == null)
         {
-            return false;
+            return null;
         }
 
         Vector2 origin = arrowSpawnPoint.position;
         Vector2 toTarget = (Vector2)target.position - origin;
         float distance = toTarget.magnitude;
-        if (distance <= 0.01f) return false;
+        if (distance <= 0.01f) return null;
 
         RaycastHit2D[] hits = Physics2D.RaycastAll(origin, toTarget.normalized, distance);
         foreach (RaycastHit2D hit in hits)
@@ -690,11 +694,44 @@ public class BowManNPC : MonoBehaviour
 
             if (hitTransform.CompareTag("Player") || hitTransform.CompareTag("Ally"))
             {
-                return true;
+                return hitTransform;
             }
         }
 
-        return false;
+        return null;
+    }
+
+    /// <summary>
+    /// 射線が味方（またはPlayer）に遮られているとき、遮っている相手ではなく
+    /// 射手自身が射線に垂直な方向へ少し移動して、別の角度からの射撃を試みる。
+    /// 瞬間移動ではなく、短時間かけて滑らかに移動する。
+    /// </summary>
+    private void SidestepSelfOutOfLineOfFire()
+    {
+        if (arrowSpawnPoint == null || target == null) return;
+
+        Vector2 origin = arrowSpawnPoint.position;
+        Vector2 fireDir = ((Vector2)target.position - origin).normalized;
+        Vector2 perpendicular = new Vector2(-fireDir.y, fireDir.x); // 射線に垂直な方向
+
+        Vector3 destination = transform.position + (Vector3)(perpendicular * sidestepDistance);
+        StartCoroutine(SidestepSelf(destination));
+    }
+
+    private IEnumerator SidestepSelf(Vector3 destination)
+    {
+        float duration = 0.3f;
+        float elapsed = 0f;
+        Vector3 start = transform.position;
+
+        while (elapsed < duration)
+        {
+            transform.position = Vector3.Lerp(start, destination, elapsed / duration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.position = destination;
     }
 
 private IEnumerator ShootRoutine()
@@ -723,14 +760,16 @@ private IEnumerator ShootRoutine()
         yield return new WaitForSeconds(chargeTime);
         
         // 溜め完了後に矢を発射
-        if (target != null && !IsAllyBlockingShot())
+        Transform blocker = FindAllyBlockingShot();
+        if (target != null && blocker == null)
         {
             if (animator != null) animator.SetTrigger("Shooting_After");
             SpawnArrow();
         }
         else if (target != null)
         {
-            Debug.Log("味方BowManNPCは射線上の味方を検知したため発射を見送りました。");
+            Debug.Log("味方BowManNPCは射線上の味方を検知したため発射を見送り、自ら移動します。");
+            SidestepSelfOutOfLineOfFire();
         }
 
         yield return new WaitForSeconds(attackCooldown); // 射撃後のクールタイム
