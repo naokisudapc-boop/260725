@@ -108,7 +108,22 @@ public class BowManNPC : MonoBehaviour
             arrowHitHandler = gameObject.AddComponent<ArrowHitHandler>();
         }
         
-        // 退却中の行動を制御するためのフラグをチェック
+                // 味方BowManNPCの退却先は鍛冶場ではなく弓工房にする。
+        // AddComponent直後に明示設定し、ArrowHitHandlerの自動タグ検索結果を上書きする。
+        if (gameObject.CompareTag("Ally"))
+        {
+            GameObject boweryWorkshop = GameObject.Find("Bowyery Workshop");
+            if (boweryWorkshop != null)
+            {
+                arrowHitHandler.blacksmithPosition = boweryWorkshop.transform;
+            }
+            else
+            {
+                Debug.LogWarning($"{gameObject.name}: Bowyery Workshop が見つかりません。");
+            }
+        }
+
+// 退却中の行動を制御するためのフラグをチェック
         isRetreating = arrowHitHandler.IsRetreating();
 
         // arrowSpawnPointが未設定の場合、自身のTransformを代用

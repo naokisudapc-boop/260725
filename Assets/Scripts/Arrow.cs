@@ -5,6 +5,8 @@ public class Arrow : MonoBehaviour
     private float speed = 15f;
     private Vector2 direction;
     private bool isHit = false;
+    
+
     private Rigidbody2D rb;
 
     [Header("Lifetime Settings")]
@@ -21,7 +23,9 @@ public class Arrow : MonoBehaviour
         }
     }
 
-    public void SetDirection(Vector2 dir)
+        
+
+public void SetDirection(Vector2 dir)
     {
         direction = dir.normalized;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
