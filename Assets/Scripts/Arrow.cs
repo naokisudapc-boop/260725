@@ -84,7 +84,10 @@ public class Arrow : MonoBehaviour
             col.enabled = false;
         }
 
+        // 矢の中心を命中対象の中心に合わせる。
+        // これにより先端側はスプライト内部へ入り、後端側は外側に残る。
         transform.SetParent(targetTransform);
+        transform.position = targetTransform.position;
 
         // ArrowHitHandlerがある場合はそれを呼び出す
         ArrowHitHandler hitHandler = targetTransform.GetComponent<ArrowHitHandler>();

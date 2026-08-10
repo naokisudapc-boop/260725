@@ -83,19 +83,20 @@ public class KeyBindingUI : MonoBehaviour
     /// 操作キー一覧の文字列を組み立てる。
     /// 操作キャラクター交代のKキーはここには含めない。
     /// </summary>
-    private string BuildKeyBindingText()
+private string BuildKeyBindingText()
     {
         return
             "【操作キー一覧】\n" +
             "移動：W / A / S / D（または矢印キー）\n" +
             "攻撃（斧）：Space\n" +
             "耕作：F\n" +
+            "水やり指示：G（操作キャラクターの足元）\n" +
             "インタラクト：E\n" +
             "攻撃指示：Q\n" +
             "指示キャンセル：X\n" +
             "採掘一斉指示：M\n" +
             "左クリック(ドラッグ)：弓の照準・発射\n" +
-            "右クリック：水やり指示 / 木の手動指定\n" +
+            "右クリック：木の手動指定\n" +
             "\n" +
             $"（このパネルの表示切替：{toggleKey}）";
     }

@@ -10,52 +10,48 @@ public class PlayerFarming : MonoBehaviour
     [SerializeField] private float commandRange = 5.0f;
 
     [Header("Farming Key Settings")]
-    [Tooltip("耕作コマンドのキー（左クリックは操作キャラクターになったBowManNPCの照準操作と衝突するため、キーボードのキーに変更）")]
+    [Tooltip("耕作コマンドのキー")]
     [SerializeField] private KeyCode plowKey = KeyCode.F;
+    [Tooltip("水やり指示のキー。操作キャラクターの足元の耕作済み畑を対象にする")]
+    [SerializeField] private KeyCode wateringKey = KeyCode.G;
 
-    void Update()
+void Update()
     {
         // 耕作コマンド専用キーで「操作キャラクター自身の足元を耕す」
         if (Input.GetKeyDown(plowKey))
         {
             InteractWithTile(FarmTileData.TileStatus.Plowed);
         }
-
-        // マウス右クリックで「NPCにそのマスの水やりを命令する」
-        else if (Input.GetMouseButtonDown(1))
+        // 水やり指示は、操作キャラクターの足元にある耕作済みタイルを対象にする
+        else if (Input.GetKeyDown(wateringKey))
         {
-            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            mouseWorldPos.z = 0f; // 2DなのでZ軸を平坦化
-            Vector3Int gridPos = farmingTilemap.WorldToCell(mouseWorldPos);
+            IssueWateringCommand();
+        }
+    }
 
-            TileBase clickedTile = farmingTilemap.GetTile(gridPos);
+    // 操作キャラクターの足元の耕作済みタイルへ水やりを指示する
+    private void IssueWateringCommand()
+    {
+        GameObject playerObj = GameObject.FindWithTag("Player");
+        if (playerObj == null) return;
 
-            if (clickedTile != null && clickedTile is FarmTileData)
-            {
-                FarmTileData farmTile = (FarmTileData)clickedTile;
+        Vector3Int gridPos = farmingTilemap.WorldToCell(playerObj.transform.position);
+        TileBase tile = farmingTilemap.GetTile(gridPos);
+        if (!(tile is FarmTileData farmTile) || farmTile.status != FarmTileData.TileStatus.Plowed)
+        {
+            Debug.Log("操作キャラクターの足元に水やり可能な耕作済み畑タイルがありません。");
+            return;
+        }
 
-                if (farmTile.status == FarmTileData.TileStatus.Plowed)
-                {
-                    // ★修正：クリックしたマスの座標（mouseWorldPos）を渡してNPCを探す
-                    FarmingNPC nearestNPC = FindNearestNPC(mouseWorldPos);
-                    if (nearestNPC != null)
-                    {
-                        nearestNPC.AssignWateringTask(farmingTilemap, gridPos, farmTileBase);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("[PlayerFarming] 範囲内に命令可能な FarmingNPC が見つかりませんでした。");
-                    }
-                }
-                else
-                {
-                    Debug.Log("ここはすでに水が撒かれているか、耕されていないため水やりできません。");
-                }
-            }
-            else
-            {
-                Debug.Log("ここには畑のタイルがありません。");
-            }
+        Vector3 targetPosition = farmingTilemap.GetCellCenterWorld(gridPos);
+        FarmingNPC nearestNPC = FindNearestNPC(targetPosition);
+        if (nearestNPC != null)
+        {
+            nearestNPC.AssignWateringTask(farmingTilemap, gridPos, farmTileBase);
+        }
+        else
+        {
+            Debug.LogWarning("[PlayerFarming] 範囲内に命令可能な FarmingNPC が見つかりませんでした。");
         }
     }
 
