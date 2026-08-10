@@ -149,6 +149,14 @@ public class BowManNPC : MonoBehaviour
     /// </summary>
     private void EnsureCharacterHealthForAlly()
     {
+        // 味方BowManNPCには敵専用のEnemyHealthを残さない。
+        // 敵用コンポーネントが残ると、味方生成後の被弾・死亡処理が競合するため削除する。
+        EnemyHealth enemyHealth = GetComponent<EnemyHealth>();
+        if (enemyHealth != null)
+        {
+            Destroy(enemyHealth);
+        }
+
         _characterHealth = GetComponent<CharacterHealth>();
         if (_characterHealth == null)
         {
@@ -659,7 +667,37 @@ public class BowManNPC : MonoBehaviour
         animator.SetFloat("Speed", moveInput.magnitude);
     }
 
-    private IEnumerator ShootRoutine()
+        private bool IsAllyBlockingShot()
+    {
+        if (!gameObject.CompareTag("Ally") || target == null || arrowSpawnPoint == null)
+        {
+            return false;
+        }
+
+        Vector2 origin = arrowSpawnPoint.position;
+        Vector2 toTarget = (Vector2)target.position - origin;
+        float distance = toTarget.magnitude;
+        if (distance <= 0.01f) return false;
+
+        RaycastHit2D[] hits = Physics2D.RaycastAll(origin, toTarget.normalized, distance);
+        foreach (RaycastHit2D hit in hits)
+        {
+            Transform hitTransform = hit.collider.transform;
+            if (hitTransform == transform || hitTransform.IsChildOf(transform))
+            {
+                continue;
+            }
+
+            if (hitTransform.CompareTag("Player") || hitTransform.CompareTag("Ally"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+private IEnumerator ShootRoutine()
     {
         isShooting = true;
         rb.linearVelocity = Vector2.zero;
@@ -685,10 +723,14 @@ public class BowManNPC : MonoBehaviour
         yield return new WaitForSeconds(chargeTime);
         
         // 溜め完了後に矢を発射
-        if (target != null)
+        if (target != null && !IsAllyBlockingShot())
         {
             if (animator != null) animator.SetTrigger("Shooting_After");
             SpawnArrow();
+        }
+        else if (target != null)
+        {
+            Debug.Log("味方BowManNPCは射線上の味方を検知したため発射を見送りました。");
         }
 
         yield return new WaitForSeconds(attackCooldown); // 射撃後のクールタイム
