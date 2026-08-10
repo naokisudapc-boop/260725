@@ -80,7 +80,7 @@ public class Hammer : MonoBehaviour
             if (enemyHealth != null && !enemyHealth.isDead)
             {
                 Debug.Log($"🔨 ハンマーが敵（{collision.gameObject.name}）をヒット！ダメージを与えます。");
-                enemyHealth.TakeDamage(1);
+                enemyHealth.TakeDamage(1, transform.position);
             }
         }
     }

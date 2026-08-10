@@ -66,7 +66,7 @@ public class PlayerAxe : MonoBehaviour
         if (enemy != null && !enemy.isDead)
         {
             Debug.Log($"💥【物理ヒット！】プレイヤーの斧が敵（{collision.name}）に直撃！");
-            enemy.TakeDamage(1);
+            enemy.TakeDamage(1, transform.position);
         }
     }
 }

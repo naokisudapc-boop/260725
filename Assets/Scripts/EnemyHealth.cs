@@ -20,9 +20,20 @@ public class EnemyHealth : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    public void TakeDamage(int amount)
+    public void TakeDamage(int amount, Vector3? attackerPosition = null)
     {
         if (isDead) return;
+
+        // 盾を持つ敵（Swordsman等）は、正面からの攻撃を一定確率で無効化できる
+        if (attackerPosition.HasValue)
+        {
+            Swordsman swordsman = GetComponent<Swordsman>();
+            if (swordsman != null && swordsman.ShouldBlockAttack(attackerPosition.Value))
+            {
+                Debug.Log($"🛡️ {gameObject.name} が盾で攻撃を防いだ！");
+                return;
+            }
+        }
 
         currentHealth -= amount;
         Debug.Log($"敵（{gameObject.name}）がダメージを受けた！ 残り体力: {currentHealth}");
