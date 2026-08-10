@@ -34,6 +34,19 @@ public class BowManNPC : MonoBehaviour
     private Rigidbody2D rb;
     private bool isShooting = false;
 
+    [Header("Arrow Ammo Settings（味方限定。敵BowManNPCは無制限のまま）")]
+    [Tooltip("矢の最大所持数")]
+    [SerializeField] private int maxArrowCount = 50;
+    [Tooltip("矢を1回補充する際に消費する木材の数")]
+    [SerializeField] private int woodCostPerResupply = 1;
+    [Tooltip("矢切れ時、Bowyery Workshopへ向かう移動速度")]
+    [SerializeField] private float resupplyMoveSpeed = 3f;
+    [Tooltip("Bowyery Workshopからこの距離以内まで近づいたら補充を試みる")]
+    [SerializeField] private float resupplyStopDistance = 1.0f;
+
+    private int _currentArrowCount;
+    private bool _isResupplying = false;
+
     [Header("Manual Aiming (操作キャラクターになったとき用)")]
     [Tooltip("マウスドラッグ中に表示する予測射線の長さ")]
     [SerializeField] private float aimLineLength = 6f;
@@ -78,6 +91,7 @@ public class BowManNPC : MonoBehaviour
         rb.freezeRotation = true;
 
         _homePosition = transform.position;
+        _currentArrowCount = maxArrowCount;
 
         // 拠点復帰機能専用の目標地点（リーシュ機能の基準点には影響しない）
         _returnBasePosition = transform.position;
@@ -289,6 +303,14 @@ public class BowManNPC : MonoBehaviour
     /// </summary>
     private void UpdateAsAlly()
     {
+        // 矢切れで補充中は、他の行動（索敵・戦闘・集合・移動同期）を全て中断して
+        // Bowyery Workshopへ向かうことを最優先にする。
+        if (_isResupplying)
+        {
+            ExecuteResupply();
+            return;
+        }
+
         if (Input.GetKeyDown(attackCommandKey))
         {
             CommandAttack();
@@ -349,6 +371,34 @@ public class BowManNPC : MonoBehaviour
 
         Vector2 moveDirection = ((Vector2)_returnBasePosition - (Vector2)transform.position).normalized;
         Move(moveDirection, moveSpeed);
+        UpdateAnimation(moveDirection);
+    }
+
+    /// <summary>
+    /// 矢切れ時、Bowyery Workshopへ向かい、到着したら木材1を消費して矢を最大数まで補充する。
+    /// 木材が不足している場合は補充できず、その場で待機し続ける（木材が用意され次第、自動的に補充される）。
+    /// </summary>
+    private void ExecuteResupply()
+    {
+        float distance = Vector2.Distance(transform.position, _returnBasePosition);
+
+        if (distance <= resupplyStopDistance)
+        {
+            // 到着：足を止めて補充を試みる
+            Move(Vector2.zero, 0f);
+            UpdateAnimation(Vector2.zero);
+
+            if (GameManager.Instance != null && GameManager.Instance.ConsumeWoodForArrowResupply(woodCostPerResupply))
+            {
+                _currentArrowCount = maxArrowCount;
+                _isResupplying = false;
+            }
+            // 木材が足りない場合はここで待機し続ける
+            return;
+        }
+
+        Vector2 moveDirection = ((Vector2)_returnBasePosition - (Vector2)transform.position).normalized;
+        Move(moveDirection, resupplyMoveSpeed);
         UpdateAnimation(moveDirection);
     }
 
@@ -634,6 +684,14 @@ public class BowManNPC : MonoBehaviour
     {
         if (arrowPrefab == null || arrowSpawnPoint == null) return;
 
+        bool isAlly = gameObject.CompareTag("Ally");
+
+        // 味方は矢切れのときは発射しない（敵は従来通り無制限）
+        if (isAlly && _currentArrowCount <= 0)
+        {
+            return;
+        }
+
         Vector2 dir;
         if (overrideDirection.HasValue)
         {
@@ -653,6 +711,16 @@ public class BowManNPC : MonoBehaviour
         if (arrow != null)
         {
             arrow.SetDirection(dir);
+        }
+
+        if (isAlly)
+        {
+            _currentArrowCount--;
+            if (_currentArrowCount <= 0)
+            {
+                // 矢切れ：Bowyery Workshopへ補充しに行く
+                _isResupplying = true;
+            }
         }
     }
 

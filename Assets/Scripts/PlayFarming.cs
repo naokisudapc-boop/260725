@@ -9,10 +9,14 @@ public class PlayerFarming : MonoBehaviour
     [Header("Dynamic Interaction Settings")]
     [SerializeField] private float commandRange = 5.0f;
 
+    [Header("Farming Key Settings")]
+    [Tooltip("耕作コマンドのキー（左クリックは操作キャラクターになったBowManNPCの照準操作と衝突するため、キーボードのキーに変更）")]
+    [SerializeField] private KeyCode plowKey = KeyCode.F;
+
     void Update()
     {
-        // マウス左クリックで「プレイヤー自身が耕す」
-        if (Input.GetMouseButtonDown(0))
+        // 耕作コマンド専用キーで「操作キャラクター自身の足元を耕す」
+        if (Input.GetKeyDown(plowKey))
         {
             InteractWithTile(FarmTileData.TileStatus.Plowed);
         }
@@ -103,14 +107,13 @@ public class PlayerFarming : MonoBehaviour
         return bestTarget;
     }
 
-    // 耕す処理
+    // 耕す処理（操作キャラクター自身の位置のマスを耕す）
     void InteractWithTile(FarmTileData.TileStatus newStatus)
     {
-        // 念のためプレイヤーが存在するときだけ耕せるようにガード
-        if (GameObject.FindWithTag("Player") == null) return;
+        GameObject playerObj = GameObject.FindWithTag("Player");
+        if (playerObj == null) return;
 
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector3Int gridPos = farmingTilemap.WorldToCell(mouseWorldPos);
+        Vector3Int gridPos = farmingTilemap.WorldToCell(playerObj.transform.position);
 
         FarmTileData newTile = ScriptableObject.CreateInstance<FarmTileData>();
         newTile.plowedSprite = farmTileBase.plowedSprite;

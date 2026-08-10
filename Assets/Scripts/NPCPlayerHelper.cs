@@ -26,8 +26,10 @@ public class NPCPlayerHelper : MonoBehaviour
     [SerializeField] private string _treesRootName = "Trees"; // 木をまとめる親オブジェクト名
 
     [Header("Combat Settings (Ally Auto-Defense)")]
-    [Tooltip("周囲の敵（Ghost/Enemy）を索敵する範囲。ThiefNPCのnormalDetectionRange相当")]
+    [Tooltip("周囲の敵（Ghost/Enemy）を索敵する範囲（平常時）。ThiefNPCのnormalDetectionRange相当")]
     [SerializeField] private float _combatDetectionRange = 5.0f;
+    [Tooltip("Qキーで攻撃指示を出したときの索敵範囲。ThiefNPCのcommandedDetectionRange相当で、平常時より広く設定できる")]
+    [SerializeField] private float _commandedDetectionRange = 15.0f;
     [SerializeField] private float _attackRange = 1.5f;
     [SerializeField] private float _combatMoveSpeed = 2.5f;
     [SerializeField] private float _attackCooldown = 1.2f;
@@ -472,7 +474,9 @@ public class NPCPlayerHelper : MonoBehaviour
     /// </summary>
     private void FindNearbyEnemy()
     {
-        float minDistance = _combatDetectionRange;
+        // Qキーで攻撃指示中は、より広い索敵範囲を使う（ThiefNPCと同じ考え方）
+        float currentDetectionRange = _isCommandedToAttack ? _commandedDetectionRange : _combatDetectionRange;
+        float minDistance = currentDetectionRange;
         _targetEnemy = null;
 
         GameObject[] ghosts = GameObject.FindGameObjectsWithTag("Ghost");

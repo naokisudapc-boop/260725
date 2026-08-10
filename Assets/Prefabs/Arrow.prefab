@@ -139,8 +139,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 328f667176398d9409c0e8ee5997bc13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Arrow
-  speed: 10
-  lifeTime: 5
+  lifeTime: 2
 --- !u!212 &7408646808112388943
 SpriteRenderer:
   serializedVersion: 2

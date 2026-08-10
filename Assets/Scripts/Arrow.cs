@@ -7,9 +7,18 @@ public class Arrow : MonoBehaviour
     private bool isHit = false;
     private Rigidbody2D rb;
 
+    [Header("Lifetime Settings")]
+    [Tooltip("矢の滞空時間（秒）。命中したかどうかに関わらず、この時間が経過すると自動的に消える")]
+    [SerializeField] private float lifeTime = 5f;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        if (lifeTime > 0f)
+        {
+            Destroy(gameObject, lifeTime);
+        }
     }
 
     public void SetDirection(Vector2 dir)

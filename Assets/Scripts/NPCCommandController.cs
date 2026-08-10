@@ -32,6 +32,10 @@ public class NPCCommandController : MonoBehaviour
                 // プレイヤー化しているキャラは除外
                 if (targetNPC.gameObject.CompareTag("Player")) continue;
 
+                // 死亡しているNPCには指示を出さない（鉱石マスの無駄な予約も防ぐ）
+                CharacterHealth targetHealth = targetNPC.GetComponent<CharacterHealth>();
+                if (targetHealth != null && targetHealth.isDead) continue;
+
                 // 男性NPCであるかどうかの判定
                 bool isMale = targetNPC.gameObject.name.Contains("男") || 
                               targetNPC.gameObject.name.Contains("Male") || 

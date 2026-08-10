@@ -344,6 +344,8 @@ public class ThiefNPC : FarmingNPC
 
     public void AssignMiningTask(Tilemap tilemap, Vector3Int gridPos, TileBase tileBase, bool canMine)
     {
+        // 死亡したThiefNPCには採掘指示を受け付けない
+        if (health != null && health.isDead) return;
         if (targetGhost != null || isMining || isGatheringToPlayer || isRetreating || !canMine) return;
 
         targetTilemap = tilemap;

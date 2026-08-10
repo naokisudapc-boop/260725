@@ -226,6 +226,22 @@ public class GameManager : MonoBehaviour
     /// BowManNPC専用のスポーンコスト消費：Food 1 + Wood 1（鉄は不要）。
     /// 通常のPlayer枠スポーン（ConsumeResourcesForSpawn）とは異なり、鉄鉱石を要求しない。
     /// </summary>
+    /// <summary>
+    /// 味方BowManNPCがBowyery Workshopで矢を補充する際の木材消費。
+    /// 木材が不足している場合は消費せず false を返す（矢は補充されない）。
+    /// </summary>
+    public bool ConsumeWoodForArrowResupply(int amount)
+    {
+        if (currentWoodCount < amount)
+        {
+            return false;
+        }
+
+        currentWoodCount -= amount;
+        UpdateWoodUI();
+        return true;
+    }
+
     public bool ConsumeResourcesForBowManSpawn()
     {
         if (currentFoodCount < 1 || currentWoodCount < 1)

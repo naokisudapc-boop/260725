@@ -4,6 +4,12 @@ using System.Collections;
 
 public class PlayerSpawnerNPC : MonoBehaviour
 {
+    // すべてのスポーン処理で共有する通し番号。cloneCount を「シーン内の
+    // PlayerSpawnerNPC の数」から計算すると、NPCを何体スポーンしても
+    // この数自体は変わらないため同じ名前のクローンが量産されてしまっていた。
+    // ここではスポーンが起きるたびに必ず1ずつ増える値を使い、名前の重複を防ぐ。
+    private static int totalSpawnCount = 0;
+
     [Header("Spawn Settings")]
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private GameObject girlPrefab; // 女008_一般人 プレハブ（Playerを呼べる特別な女の子）
@@ -260,7 +266,8 @@ public class PlayerSpawnerNPC : MonoBehaviour
 
             GameObject newPlayer = Instantiate(playerPrefab, spawnPlace.position, Quaternion.identity);
 
-            int cloneCount = Object.FindObjectsByType<PlayerSpawnerNPC>().Length;
+            totalSpawnCount++;
+            int cloneCount = totalSpawnCount;
 
             // NPC 仕様の Player ヘルパーは、味方（Ally）として扱う
             newPlayer.tag = "Ally";
@@ -314,7 +321,8 @@ public class PlayerSpawnerNPC : MonoBehaviour
 
             GameObject newGirl = Instantiate(girlPrefab, spawnPlace.position, Quaternion.identity);
 
-            int cloneCount = Object.FindObjectsByType<PlayerSpawnerNPC>().Length;
+            totalSpawnCount++;
+            int cloneCount = totalSpawnCount;
             newGirl.name = $"Girl_Clone_{cloneCount}_{newGirl.name.Replace("(Clone)", "")}";
 
             // 女の子は Player を呼べる特別な味方（Ally）として扱う
