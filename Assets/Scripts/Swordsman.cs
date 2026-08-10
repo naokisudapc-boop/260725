@@ -36,6 +36,13 @@ public class Swordsman : MonoBehaviour
     private Animator animator;
     private Rigidbody2D rb;
     private bool isAttacking = false;
+    [Header("Shield Block Reaction")]
+    [Tooltip("盾で攻撃を防いだときに後退する速度")]
+    [SerializeField] private float shieldKnockbackSpeed = 3.5f;
+    [Tooltip("盾ブロック時のノックバック時間")]
+    [SerializeField] private float shieldKnockbackDuration = 0.12f;
+    private Coroutine shieldKnockbackRoutine;
+
 
     // 直近の移動・攻撃方向。盾の正面判定に使う（LastInputX/LastInputYと同じ役割）
     private Vector2 facingDirection = Vector2.down;
@@ -169,7 +176,38 @@ public class Swordsman : MonoBehaviour
         isAttacking = false;
     }
 
-    private void Move(Vector2 direction, float speed)
+        /// <summary>
+    /// 盾で攻撃を無効化したとき、攻撃者から離れる方向へ短く後退する。
+    /// </summary>
+    public void OnShieldBlock(Vector3 attackerPosition)
+    {
+        Vector2 knockbackDirection = ((Vector2)transform.position - (Vector2)attackerPosition).normalized;
+        if (knockbackDirection.sqrMagnitude < 0.0001f) return;
+
+        if (shieldKnockbackRoutine != null)
+        {
+            StopCoroutine(shieldKnockbackRoutine);
+        }
+        shieldKnockbackRoutine = StartCoroutine(ShieldKnockbackRoutine(knockbackDirection));
+    }
+
+    private IEnumerator ShieldKnockbackRoutine(Vector2 direction)
+    {
+        if (rb != null)
+        {
+            rb.linearVelocity = direction * shieldKnockbackSpeed;
+        }
+
+        yield return new WaitForSeconds(shieldKnockbackDuration);
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+        }
+        shieldKnockbackRoutine = null;
+    }
+
+private void Move(Vector2 direction, float speed)
     {
         if (rb != null) rb.linearVelocity = direction * speed;
     }

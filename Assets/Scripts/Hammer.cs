@@ -12,6 +12,8 @@ public class Hammer : MonoBehaviour
     private Collider2D hammerCollider;
     private Quaternion originalRotation;
     private SpriteRenderer spriteRenderer;
+    private bool shieldBlocked = false;
+
 
     void Awake()
     {
@@ -42,7 +44,12 @@ public class Hammer : MonoBehaviour
         StartCoroutine(SwingAndSpinHammer());
     }
 
-    public IEnumerator SwingAndSpinHammer()
+        public void NotifyShieldBlocked()
+    {
+        shieldBlocked = true;
+    }
+
+public IEnumerator SwingAndSpinHammer()
     {
         Debug.Log($"{transform.parent.name} のハンマー攻撃（回転演出）を開始します。");
 
@@ -50,12 +57,30 @@ public class Hammer : MonoBehaviour
 
         float duration = 0.3f; // 攻撃持続時間
         float elapsed = 0.0f;
+        shieldBlocked = false;
 
         while (elapsed < duration)
         {
+            if (shieldBlocked && elapsed >= duration * 0.5f)
+            {
+                break;
+            }
+
             transform.Rotate(0, 0, rotationSpeed * Time.deltaTime);
             elapsed += Time.deltaTime;
-            yield return null; // 1フレーム待つ
+            yield return null;
+        }
+
+        if (shieldBlocked)
+        {
+            float reverseElapsed = 0f;
+            const float reverseDuration = 0.08f;
+            while (reverseElapsed < reverseDuration)
+            {
+                transform.Rotate(0, 0, -rotationSpeed * Time.deltaTime);
+                reverseElapsed += Time.deltaTime;
+                yield return null;
+            }
         }
 
         if (hammerCollider != null) hammerCollider.enabled = false;
@@ -80,7 +105,11 @@ public class Hammer : MonoBehaviour
             if (enemyHealth != null && !enemyHealth.isDead)
             {
                 Debug.Log($"🔨 ハンマーが敵（{collision.gameObject.name}）をヒット！ダメージを与えます。");
-                enemyHealth.TakeDamage(1, transform.position);
+                bool damageApplied = enemyHealth.TakeDamage(1, transform.position);
+                if (!damageApplied)
+                {
+                    NotifyShieldBlocked();
+                }
             }
         }
     }
