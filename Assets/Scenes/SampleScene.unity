@@ -526,9 +526,11 @@ GameObject:
   m_Component:
   - component: {fileID: 99485010}
   - component: {fileID: 99485009}
+  - component: {fileID: 99485013}
   - component: {fileID: 99485008}
   - component: {fileID: 99485007}
   - component: {fileID: 99485011}
+  - component: {fileID: 99485012}
   m_Layer: 0
   m_Name: sample012_1
   m_TagString: Untagged
@@ -635,8 +637,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 254512691
+  m_SortingLayer: 4
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: -2961493989563067450, guid: 921a2436b58455f4ca9af9417a67db9b, type: 3}
@@ -674,7 +676,7 @@ Transform:
   m_GameObject: {fileID: 99485006}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -110.49, y: -88.11, z: 0}
+  m_LocalPosition: {x: -111.3, y: -89.3, z: 0}
   m_LocalScale: {x: 5.548755, y: 5.548755, z: 5.548755}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -707,6 +709,47 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!95 &99485012
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 99485006}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 3189e7f6ab8dba048ba3cacfce17b775, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &99485013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 99485006}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdcd93d5bee06ec45bdfdbb28a9bab1b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSpawnerNPC
+  playerPrefab: {fileID: 0}
+  girlPrefab: {fileID: 0}
+  correctPlayerController: {fileID: 0}
+  spawnPlace: {fileID: 0}
+  interactRange: 3
+  interactKey: 101
+  backSprite: {fileID: 0}
 --- !u!1 &138132504
 GameObject:
   m_ObjectHideFlags: 0
