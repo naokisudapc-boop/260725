@@ -100,6 +100,11 @@ public class Arrow : MonoBehaviour
         {
             StickToTarget(collision.transform);
         }
+        // Enemyタグのオブジェクトを対象にする
+        else if (collision.CompareTag("Enemy"))
+        {
+            StickToTarget(collision.transform);
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -116,7 +121,7 @@ public class Arrow : MonoBehaviour
         {
             if (collision.transform == shooter.transform || 
                 collision.transform.IsChildOf(shooter.transform) ||
-                collision.GetComponentInParent<BowManNPC>() == shooter)
+                collision.collider.GetComponentInParent<BowManNPC>() == shooter)
             {
                 return;
             }
@@ -124,6 +129,11 @@ public class Arrow : MonoBehaviour
 
         // PlayerまたはAllyタグのオブジェクトを対象にする
         if (collision.gameObject.CompareTag("Player") || collision.gameObject.CompareTag("Ally"))
+        {
+            StickToTarget(collision.transform);
+        }
+        // Enemyタグのオブジェクトを対象にする
+        else if (collision.gameObject.CompareTag("Enemy"))
         {
             StickToTarget(collision.transform);
         }
@@ -159,6 +169,15 @@ public class Arrow : MonoBehaviour
         if (hitHandler != null)
         {
             hitHandler.OnHitByArrow();
+        }
+
+        // EnemyHealthがある場合はダメージを与える
+        EnemyHealth enemyHealth = targetTransform.GetComponentInParent<EnemyHealth>();
+        if (enemyHealth != null)
+        {
+            // 矢の進行方向を攻撃者位置として渡す
+            Vector3 attackerPosition = transform.position - (Vector3)(direction * penetrationDepth);
+            enemyHealth.TakeDamage(1, attackerPosition);
         }
 
         // GameManager の仕組みを使って次のキャラクターに切り替える。
