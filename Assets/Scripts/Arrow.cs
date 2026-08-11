@@ -176,7 +176,8 @@ public class Arrow : MonoBehaviour
         if (enemyHealth != null)
         {
             // 矢の進行方向を攻撃者位置として渡す
-            Vector3 attackerPosition = transform.position - (Vector3)(direction * penetrationDepth);
+            // shooterの位置を渡すことで、Swordsmanの盾ブロック判定が正しく動作する
+            Vector3 attackerPosition = shooter != null ? shooter.transform.position : transform.position - (Vector3)(direction * penetrationDepth);
             enemyHealth.TakeDamage(1, attackerPosition);
         }
 
@@ -198,4 +199,8 @@ public class Arrow : MonoBehaviour
             Debug.Log("操作キャラクターに矢が突き刺さり、GameManager経由で次のキャラクターに切り替えました！");
         }
     }
-}
+}</arg_value><arg_key>task_progress</arg_key><arg_value>- [x] Analyze requirements
+- [x] Locate attackerPosition calculation in Arrow.cs
+- [x] Fix attackerPosition to use shooter's position for shield blocking
+- [ ] Test shield block functionality
+- [ ] Verify test cases</arg_value></tool_call>
