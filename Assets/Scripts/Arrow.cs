@@ -8,6 +8,9 @@ public class Arrow : MonoBehaviour
     
 
     private Rigidbody2D rb;
+    
+    // 射手を追跡して自己衝突を防ぐ
+    private BowManNPC shooter;
 
     [Header("Lifetime Settings")]
     [Tooltip("矢の滞空時間（秒）。命中したかどうかに関わらず、この時間が経過すると自動的に消える")]
@@ -27,13 +30,41 @@ public class Arrow : MonoBehaviour
         }
     }
 
-        
-
-public void SetDirection(Vector2 dir)
+    public void SetDirection(Vector2 dir)
     {
         direction = dir.normalized;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(0, 0, angle);
+    }
+    
+    /// <summary>
+    /// 射手を設定し、自己衝突を防ぐためのCollider間の衝突を無視する
+    /// </summary>
+    public void SetShooter(BowManNPC shooter)
+    {
+        this.shooter = shooter;
+        
+        // 射手のColliderとArrowのCollider間の衝突を無視
+        if (shooter != null)
+        {
+            Collider2D arrowCollider = GetComponent<Collider2D>();
+            Collider2D shooterCollider = shooter.GetComponent<Collider2D>();
+            
+            if (arrowCollider != null && shooterCollider != null)
+            {
+                Physics2D.IgnoreCollision(arrowCollider, shooterCollider, true);
+            }
+            
+            // 子オブジェクトのColliderもチェック
+            Collider2D[] shooterChildColliders = shooter.GetComponentsInChildren<Collider2D>();
+            foreach (Collider2D childCollider in shooterChildColliders)
+            {
+                if (childCollider != arrowCollider)
+                {
+                    Physics2D.IgnoreCollision(arrowCollider, childCollider, true);
+                }
+            }
+        }
     }
 
     void Update()
@@ -53,6 +84,17 @@ public void SetDirection(Vector2 dir)
             return;
         }
 
+        // 射手自身またはその子オブジェクトのColliderは除外
+        if (shooter != null)
+        {
+            if (collision.transform == shooter.transform || 
+                collision.transform.IsChildOf(shooter.transform) ||
+                collision.GetComponentInParent<BowManNPC>() == shooter)
+            {
+                return;
+            }
+        }
+
         // PlayerまたはAllyタグのオブジェクトを対象にする
         if (collision.CompareTag("Player") || collision.CompareTag("Ally"))
         {
@@ -67,6 +109,17 @@ public void SetDirection(Vector2 dir)
         if (collision.gameObject.GetComponent<UnityEngine.Tilemaps.TilemapCollider2D>() != null)
         {
             return;
+        }
+
+        // 射手自身またはその子オブジェクトのColliderは除外
+        if (shooter != null)
+        {
+            if (collision.transform == shooter.transform || 
+                collision.transform.IsChildOf(shooter.transform) ||
+                collision.GetComponentInParent<BowManNPC>() == shooter)
+            {
+                return;
+            }
         }
 
         // PlayerまたはAllyタグのオブジェクトを対象にする

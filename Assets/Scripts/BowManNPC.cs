@@ -687,7 +687,7 @@ public class BowManNPC : MonoBehaviour
         foreach (RaycastHit2D hit in hits)
         {
             Transform hitTransform = hit.collider.transform;
-            if (hitTransform == transform || hitTransform.IsChildOf(transform) || hitTransform.GetComponentInParent<BowManNPC>() == this)
+            if (hitTransform == transform || hitTransform.IsChildOf(transform))
             {
                 continue;
             }
@@ -807,6 +807,8 @@ public class BowManNPC : MonoBehaviour
         if (arrow != null)
         {
             arrow.SetDirection(dir);
+            // 射手を設定して自己衝突を防止
+            arrow.SetShooter(this);
         }
 
         if (isAlly)
