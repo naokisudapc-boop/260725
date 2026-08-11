@@ -112,7 +112,7 @@ public class BowManNPC : MonoBehaviour
             arrowHitHandler = gameObject.AddComponent<ArrowHitHandler>();
         }
         
-                // 味方BowManNPCの退却先は鍛冶場ではなく弓工房にする。
+        // 味方BowManNPCの退却先は鍛冶場ではなく弓工房にする。
         // AddComponent直後に明示設定し、ArrowHitHandlerの自動タグ検索結果を上書きする。
         if (gameObject.CompareTag("Ally"))
         {
@@ -127,7 +127,7 @@ public class BowManNPC : MonoBehaviour
             }
         }
 
-// 退却中の行動を制御するためのフラグをチェック
+        // 退却中の行動を制御するためのフラグをチェック
         isRetreating = arrowHitHandler.IsRetreating();
 
         // arrowSpawnPointが未設定の場合、自身のTransformを代用
@@ -671,7 +671,7 @@ public class BowManNPC : MonoBehaviour
         animator.SetFloat("Speed", moveInput.magnitude);
     }
 
-        private Transform FindAllyBlockingShot()
+    private Transform FindAllyBlockingShot()
     {
         if (!gameObject.CompareTag("Ally") || target == null || arrowSpawnPoint == null)
         {
@@ -687,7 +687,7 @@ public class BowManNPC : MonoBehaviour
         foreach (RaycastHit2D hit in hits)
         {
             Transform hitTransform = hit.collider.transform;
-            if (hitTransform == transform || hitTransform.IsChildOf(transform))
+            if (hitTransform == transform || hitTransform.IsChildOf(transform) || hitTransform.GetComponentInParent<BowManNPC>() == this)
             {
                 continue;
             }
@@ -734,7 +734,7 @@ public class BowManNPC : MonoBehaviour
         transform.position = destination;
     }
 
-private IEnumerator ShootRoutine()
+    private IEnumerator ShootRoutine()
     {
         isShooting = true;
         rb.linearVelocity = Vector2.zero;
