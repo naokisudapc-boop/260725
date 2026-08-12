@@ -65,6 +65,18 @@ public class ArrowHitHandler : MonoBehaviour
     }
     
     /// <summary>
+    /// 頭部への命中。退却・被弾回数のカウントに関わらず即座に死亡させる。
+    /// </summary>
+    public void OnHeadshot()
+    {
+        if (characterHealth != null && !characterHealth.isDead)
+        {
+            Debug.Log($"🎯 {gameObject.name} に頭部命中！ 即死。");
+            characterHealth.Die();
+        }
+    }
+
+    /// <summary>
     /// 矢が当たったときの処理
     /// 外部から呼び出すメインメソッド
     /// </summary>

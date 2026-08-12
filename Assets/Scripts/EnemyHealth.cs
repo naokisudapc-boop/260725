@@ -47,6 +47,17 @@ public class EnemyHealth : MonoBehaviour
     }
 
 
+    /// <summary>
+    /// 頭部への命中。盾によるブロック判定・残り体力に関わらず即座に倒す。
+    /// </summary>
+    public void TakeHeadshotDamage()
+    {
+        if (isDead) return;
+
+        Debug.Log($"🎯 {gameObject.name} に頭部命中！ 即死。");
+        Die();
+    }
+
     private void Die()
     {
         if (isDead) return;

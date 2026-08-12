@@ -242,10 +242,12 @@ public class BowManNPC : MonoBehaviour
             Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             mouseWorldPos.z = arrowSpawnPoint.position.z;
 
-            Vector2 dir = ((Vector2)mouseWorldPos - (Vector2)arrowSpawnPoint.position);
-            if (dir.sqrMagnitude > 0.0001f)
+            // 弓を引く方式：ドラッグした方向とは逆方向に矢を発射する
+            // （マウスを左に引けば右へ、右に引けば左へ発射される）
+            Vector2 dragVector = ((Vector2)mouseWorldPos - (Vector2)arrowSpawnPoint.position);
+            if (dragVector.sqrMagnitude > 0.0001f)
             {
-                _aimDirection = dir.normalized;
+                _aimDirection = -dragVector.normalized;
             }
 
             // アニメーションの向きを照準方向に合わせる

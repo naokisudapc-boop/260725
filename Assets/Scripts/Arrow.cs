@@ -20,15 +20,59 @@ public class Arrow : MonoBehaviour
     [Tooltip("命中した瞬間の位置から、矢の向きにさらに進める距離。値を大きくするほど深く突き刺さり、先端がスプライトを貫通して見える")]
     [SerializeField] private float penetrationDepth = 0.3f;
 
+    [Header("Headshot Settings")]
+    [Tooltip("命中位置が対象のコライダー上部からこの割合以内なら頭部命中（即死）とみなす")]
+    [Range(0f, 1f)]
+    [SerializeField] private float headshotZoneRatio = 0.25f;
+
+    /// <summary>
+    /// 命中位置が対象コライダーの「頭部エリア」（上部headshotZoneRatio）に入っているか判定する
+    /// </summary>
+    private bool IsHeadshot(Collider2D targetCollider)
+    {
+        if (targetCollider == null) return false;
+
+        Bounds bounds = targetCollider.bounds;
+        if (bounds.size.y <= 0f) return false;
+
+        float headZoneStart = bounds.max.y - bounds.size.y * headshotZoneRatio;
+        return transform.position.y >= headZoneStart;
+    }
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
 
-        // 命中済みのArrowは2秒経過後も削除しない
-        if (lifeTime > 0f && !isHit)
+        // 滞空時間が経過しても何にも命中しなかった場合、消すのではなく地面に刺さる
+        if (lifeTime > 0f)
         {
-            Destroy(gameObject, lifeTime);
+            Invoke(nameof(StickToGround), lifeTime);
         }
+    }
+
+    /// <summary>
+    /// 滞空時間が経過しても何にも命中しなかった場合に呼ばれる。矢を地面に刺さった状態にする。
+    /// </summary>
+    private void StickToGround()
+    {
+        if (isHit) return; // 既に何かに命中している場合は何もしない
+
+        isHit = true;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.simulated = false;
+        }
+
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null)
+        {
+            col.enabled = false;
+        }
+
+        // 進行方向にわずかに埋め込むことで、地面に突き刺さって見えるようにする
+        transform.position += (Vector3)(direction * penetrationDepth);
     }
 
     public void SetDirection(Vector2 dir)
@@ -99,12 +143,12 @@ public class Arrow : MonoBehaviour
         // PlayerまたはAllyタグのオブジェクトを対象にする
         if (collision.CompareTag("Player") || collision.CompareTag("Ally"))
         {
-            StickToTarget(collision.transform);
+            StickToTarget(collision.transform, collision);
         }
         // Enemyタグのオブジェクトを対象にする
         else if (collision.CompareTag("Enemy"))
         {
-            StickToTarget(collision.transform);
+            StickToTarget(collision.transform, collision);
         }
     }
 
@@ -131,18 +175,21 @@ public class Arrow : MonoBehaviour
         // PlayerまたはAllyタグのオブジェクトを対象にする
         if (collision.gameObject.CompareTag("Player") || collision.gameObject.CompareTag("Ally"))
         {
-            StickToTarget(collision.transform);
+            StickToTarget(collision.transform, collision.collider);
         }
         // Enemyタグのオブジェクトを対象にする
         else if (collision.gameObject.CompareTag("Enemy"))
         {
-            StickToTarget(collision.transform);
+            StickToTarget(collision.transform, collision.collider);
         }
     }
 
-    private void StickToTarget(Transform targetTransform)
+    private void StickToTarget(Transform targetTransform, Collider2D hitCollider)
     {
         isHit = true;
+        CancelInvoke(nameof(StickToGround));
+
+        bool headshot = IsHeadshot(hitCollider);
 
         if (rb != null)
         {
@@ -165,21 +212,35 @@ public class Arrow : MonoBehaviour
 
         transform.SetParent(targetTransform);
 
-        // ArrowHitHandlerがある場合はそれを呼び出す
+        // ArrowHitHandlerがある場合はそれを呼び出す（頭部命中なら即死、それ以外は通常の被弾処理）
         ArrowHitHandler hitHandler = targetTransform.GetComponent<ArrowHitHandler>();
         if (hitHandler != null)
         {
-            hitHandler.OnHitByArrow();
+            if (headshot)
+            {
+                hitHandler.OnHeadshot();
+            }
+            else
+            {
+                hitHandler.OnHitByArrow();
+            }
         }
 
-        // EnemyHealthがある場合はダメージを与える
+        // EnemyHealthがある場合はダメージを与える（頭部命中なら盾を無視して即死）
         EnemyHealth enemyHealth = targetTransform.GetComponentInParent<EnemyHealth>();
         if (enemyHealth != null)
         {
-            // 矢の進行方向を攻撃者位置として渡す
-            // shooterの位置を渡すことで、Swordsmanの盾ブロック判定が正しく動作する
-            Vector3 attackerPosition = shooter != null ? shooter.transform.position : transform.position - (Vector3)(direction * penetrationDepth);
-            enemyHealth.TakeDamage(1, attackerPosition);
+            if (headshot)
+            {
+                enemyHealth.TakeHeadshotDamage();
+            }
+            else
+            {
+                // 矢の進行方向を攻撃者位置として渡す
+                // shooterの位置を渡すことで、Swordsmanの盾ブロック判定が正しく動作する
+                Vector3 attackerPosition = shooter != null ? shooter.transform.position : transform.position - (Vector3)(direction * penetrationDepth);
+                enemyHealth.TakeDamage(1, attackerPosition);
+            }
         }
 
         // GameManager の仕組みを使って次のキャラクターに切り替える。
