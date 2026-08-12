@@ -168,6 +168,13 @@ public class Swordsman : MonoBehaviour
                 if (health != null && !health.isDead)
                 {
                     health.Die();
+
+                    // 回避されなかった（実際に倒せた）場合のみ、この敵自身の回避率を上げる
+                    if (health.isDead)
+                    {
+                        EnemyHealth selfHealth = GetComponent<EnemyHealth>();
+                        selfHealth?.OnEnemyDefeated();
+                    }
                 }
             }
         }

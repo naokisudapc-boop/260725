@@ -75,6 +75,13 @@ public class EnemyAxe : MonoBehaviour
             Debug.Log($"💥【痛い！】敵の斧が {collision.gameObject.name} にヒットしました！");
             health.Die(); // ★確実に体力を減らして死亡させる
 
+            // 回避されなかった（実際に倒せた）場合のみ、この敵自身の回避率を上げる
+            if (health.isDead)
+            {
+                EnemyHealth selfHealth = GetComponentInParent<EnemyHealth>();
+                selfHealth?.OnEnemyDefeated();
+            }
+
             // 一度ヒットしたらコライダーを無効化し、連続ヒットを防ぐ
             if (axeCollider != null) axeCollider.enabled = false;
         }

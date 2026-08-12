@@ -224,22 +224,34 @@ public class Arrow : MonoBehaviour
             {
                 hitHandler.OnHitByArrow();
             }
+
+            // 射手が敵（EnemyHealthを持つ）で、この一撃でPlayer/Allyを倒した場合、
+            // 射手自身の回避率を上昇させる
+            CharacterHealth targetHealth = targetTransform.GetComponent<CharacterHealth>();
+            if (targetHealth != null && targetHealth.isDead && shooter != null)
+            {
+                EnemyHealth shooterEnemyHealth = shooter.GetComponent<EnemyHealth>();
+                shooterEnemyHealth?.OnEnemyDefeated();
+            }
         }
 
         // EnemyHealthがある場合はダメージを与える（頭部命中なら盾を無視して即死）
         EnemyHealth enemyHealth = targetTransform.GetComponentInParent<EnemyHealth>();
         if (enemyHealth != null)
         {
+            // 射手がPlayer/Ally側（CharacterHealthを持つ）なら、撃破者として渡す
+            CharacterHealth shooterCharacterHealth = shooter != null ? shooter.GetComponent<CharacterHealth>() : null;
+
             if (headshot)
             {
-                enemyHealth.TakeHeadshotDamage();
+                enemyHealth.TakeHeadshotDamage(shooterCharacterHealth);
             }
             else
             {
                 // 矢の進行方向を攻撃者位置として渡す
                 // shooterの位置を渡すことで、Swordsmanの盾ブロック判定が正しく動作する
                 Vector3 attackerPosition = shooter != null ? shooter.transform.position : transform.position - (Vector3)(direction * penetrationDepth);
-                enemyHealth.TakeDamage(1, attackerPosition);
+                enemyHealth.TakeDamage(1, attackerPosition, shooterCharacterHealth);
             }
         }
 
