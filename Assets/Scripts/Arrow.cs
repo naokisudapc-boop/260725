@@ -120,6 +120,22 @@ public class Arrow : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 対象が非戦闘員の女性NPC（FarmingNPC/NPCPlayerHelperでgender==Female）かどうかを判定する。
+    /// 該当する場合、矢はこの相手には一切当たらず素通りする（意図的な標的にならないだけでなく、
+    /// 巻き添えで命中することも防ぐ）。
+    /// </summary>
+    private bool IsNonCombatantFemale(Transform t)
+    {
+        FarmingNPC farmingData = t.GetComponentInParent<FarmingNPC>();
+        if (farmingData != null && farmingData.gender == Gender.Female) return true;
+
+        NPCPlayerHelper helperData = t.GetComponentInParent<NPCPlayerHelper>();
+        if (helperData != null && helperData.gender == Gender.Female) return true;
+
+        return false;
+    }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (isHit) return;
@@ -138,6 +154,12 @@ public class Arrow : MonoBehaviour
             {
                 return;
             }
+        }
+
+        // 非戦闘員の女性NPCには当たらず素通りする
+        if (IsNonCombatantFemale(collision.transform))
+        {
+            return;
         }
 
         // PlayerまたはAllyタグのオブジェクトを対象にする
@@ -170,6 +192,12 @@ public class Arrow : MonoBehaviour
             {
                 return;
             }
+        }
+
+        // 非戦闘員の女性NPCには当たらず素通りする
+        if (IsNonCombatantFemale(collision.transform))
+        {
+            return;
         }
 
         // PlayerまたはAllyタグのオブジェクトを対象にする

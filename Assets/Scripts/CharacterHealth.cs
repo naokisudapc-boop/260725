@@ -8,6 +8,15 @@ public class CharacterHealth : MonoBehaviour
     public bool isControllable = true;
     public bool isDead = false;
 
+    [Header("Evasion Settings")]
+    [Tooltip("回避率（%）。開始時に1〜10のランダム値が設定される。敵を倒すと上昇する（上限90%）")]
+    [Range(0f, 100f)]
+    public float evasionChance = 5f;
+    [Tooltip("回避成功時、スプライトを一瞬消す長さ（秒）")]
+    [SerializeField] private float evadeFlickerDuration = 0.15f;
+
+    private const float MaxEvasionChance = 90f;
+
     [Header("Death Animation Settings")]
     [SerializeField] private float shakeDuration = 2f; // ぶるぶるする時間（秒）
     [SerializeField] private float shakeMagnitude = 0.1f; // ぶるぶるの強さ
@@ -18,6 +27,7 @@ public class CharacterHealth : MonoBehaviour
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        evasionChance = Random.Range(1f, 10f);
     }
 
     void Update()
@@ -52,6 +62,15 @@ public class CharacterHealth : MonoBehaviour
     public void Die()
     {
         if (isDead) return;
+
+        // 回避判定：成功したら死亡処理を行わず、スプライトを一瞬消す演出だけ行う
+        if (Random.Range(0f, 100f) < evasionChance)
+        {
+            Debug.Log($"{gameObject.name} は攻撃を回避した！（回避率: {evasionChance:F1}%）");
+            StartCoroutine(EvadeFlicker());
+            return;
+        }
+
         isDead = true;
 
         // 交代処理の要否判定用に、死亡時点で操作キャラクターだったかを保存
@@ -105,6 +124,25 @@ public class CharacterHealth : MonoBehaviour
 
         // Start the death visual routine
         StartCoroutine(DeathAnimationRoutine());
+    }
+
+    private System.Collections.IEnumerator EvadeFlicker()
+    {
+        if (spriteRenderer == null) yield break;
+
+        spriteRenderer.enabled = false;
+        yield return new WaitForSeconds(evadeFlickerDuration);
+        spriteRenderer.enabled = true;
+    }
+
+    /// <summary>
+    /// 敵を倒したときに呼ばれる。回避率が0〜10%ランダムに上昇する（上限90%）。
+    /// </summary>
+    public void OnEnemyDefeated()
+    {
+        float increase = Random.Range(0f, 10f);
+        evasionChance = Mathf.Min(evasionChance + increase, MaxEvasionChance);
+        Debug.Log($"{gameObject.name} の回避率が上昇: {evasionChance:F1}%");
     }
 
     private System.Collections.IEnumerator DeathAnimationRoutine()

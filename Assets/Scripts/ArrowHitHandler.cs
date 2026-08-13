@@ -82,6 +82,9 @@ public class ArrowHitHandler : MonoBehaviour
     /// </summary>
     public void OnHitByArrow()
     {
+        // 死亡済みのキャラクターには何もしない（退却も死亡処理も再度発生させない）
+        if (characterHealth != null && characterHealth.isDead) return;
+
         arrowHitCount++;
         
         if (arrowHitCount == 1)
