@@ -470,12 +470,6 @@ public class BowManNPC : MonoBehaviour
             // 自分自身は除外
             if (ally == gameObject) continue;
 
-            // 女性NPC（農作業などの非戦闘員）は攻撃対象から除外する
-            FarmingNPC farmingData = ally.GetComponent<FarmingNPC>();
-            if (farmingData != null && farmingData.gender == Gender.Female) continue;
-            NPCPlayerHelper helperData = ally.GetComponent<NPCPlayerHelper>();
-            if (helperData != null && helperData.gender == Gender.Female) continue;
-            
             float distance = Vector2.Distance(transform.position, ally.transform.position);
             if (distance <= detectRange && distance < closestDistance)
             {
