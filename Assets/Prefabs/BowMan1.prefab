@@ -52,6 +52,8 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
+  evasionChance: 5
+  evadeFlickerDuration: 0.15
   shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!114 &5736934602168100107
@@ -78,10 +80,11 @@ MonoBehaviour:
   returnToBaseStopDistance: 2
   arrowPrefab: {fileID: 4856575382425508897, guid: dfadf7e74a488cd4cb1287155985a781, type: 3}
   arrowSpawnPoint: {fileID: 647684733967696956}
-  maxArrowCount: 50
+  maxArrowCount: 10
   woodCostPerResupply: 1
   resupplyMoveSpeed: 3
   resupplyStopDistance: 1
+  sidestepDistance: 1
   aimLineLength: 6
   aimLineRenderer: {fileID: 0}
   retreatMoveSpeed: 1.5

@@ -7091,6 +7091,8 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
+  evasionChance: 5
+  evadeFlickerDuration: 0.15
   shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!4 &1066247475
@@ -8000,6 +8002,8 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
+  evasionChance: 5
+  evadeFlickerDuration: 0.15
   shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!4 &1248431510
@@ -16873,6 +16877,8 @@ MonoBehaviour:
   maxHealth: 3
   currentHealth: 0
   isDead: 0
+  evasionChance: 5
+  evadeFlickerDuration: 0.15
   shakeDuration: 0.5
   shakeMagnitude: 0.1
 --- !u!4 &1506919063 stripped
@@ -16918,6 +16924,8 @@ MonoBehaviour:
   isPlayer: 1
   isControllable: 1
   isDead: 0
+  evasionChance: 5
+  evadeFlickerDuration: 0.15
   shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!114 &1506919087
@@ -17734,6 +17742,8 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
+  evasionChance: 5
+  evadeFlickerDuration: 0.15
   shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!4 &1597692050
@@ -42630,6 +42640,8 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
+  evasionChance: 5
+  evadeFlickerDuration: 0.15
   shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!4 &1876787799
@@ -43585,6 +43597,8 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 1
   isDead: 0
+  evasionChance: 5
+  evadeFlickerDuration: 0.15
   shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!60 &2035053136
@@ -44354,6 +44368,10 @@ PrefabInstance:
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[14].y
       value: -0.07
       objectReference: {fileID: 0}
+    - target: {fileID: 5736934602168100107, guid: de5d1910c71257949aec3018b1e1a72b, type: 3}
+      propertyPath: maxArrowCount
+      value: 10
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -44627,6 +44645,8 @@ MonoBehaviour:
   maxHealth: 1
   currentHealth: 0
   isDead: 0
+  evasionChance: 5
+  evadeFlickerDuration: 0.15
   shakeDuration: 2
   shakeMagnitude: 0.1
 --- !u!1660057539 &9223372036854775807
