@@ -470,6 +470,12 @@ public class BowManNPC : MonoBehaviour
             // 自分自身は除外
             if (ally == gameObject) continue;
 
+            // 女性NPC（農作業などの非戦闘員）は攻撃対象から除外する
+            FarmingNPC farmingData = ally.GetComponent<FarmingNPC>();
+            if (farmingData != null && farmingData.gender == Gender.Female) continue;
+            NPCPlayerHelper helperData = ally.GetComponent<NPCPlayerHelper>();
+            if (helperData != null && helperData.gender == Gender.Female) continue;
+            
             float distance = Vector2.Distance(transform.position, ally.transform.position);
             if (distance <= detectRange && distance < closestDistance)
             {
@@ -667,9 +673,13 @@ public class BowManNPC : MonoBehaviour
         animator.SetFloat("Speed", moveInput.magnitude);
     }
 
+    /// <summary>
+    /// 射線上に、意図した標的以外のPlayer/Ally（女性NPCを含む）が立っていないか判定する。
+    /// 味方（Enemyを狙う）・敵（Player/Allyを狙う）どちらの弓兵にも共通で使う。
+    /// </summary>
     private Transform FindAllyBlockingShot()
     {
-        if (!gameObject.CompareTag("Ally") || target == null || arrowSpawnPoint == null)
+        if (target == null || arrowSpawnPoint == null)
         {
             return null;
         }
@@ -684,6 +694,12 @@ public class BowManNPC : MonoBehaviour
         {
             Transform hitTransform = hit.collider.transform;
             if (hitTransform == transform || hitTransform.IsChildOf(transform))
+            {
+                continue;
+            }
+
+            // 意図した標的自身は「射線を塞いでいる」対象から除外する
+            if (hitTransform == target || hitTransform.IsChildOf(target))
             {
                 continue;
             }
