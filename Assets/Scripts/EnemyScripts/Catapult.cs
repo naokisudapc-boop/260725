@@ -29,6 +29,10 @@ public class Catapult : MonoBehaviour
     [SerializeField] private float arcHeight = 2.5f;
     [Tooltip("岩のスプライトの大きさ")]
     [SerializeField] private float rockScale = 0.3f;
+    [Tooltip("岩スプライトの描画Sorting Layer名（未設定/存在しない場合はDefaultのまま）")]
+    [SerializeField] private string rockSortingLayerName = "Enemy";
+    [Tooltip("岩スプライトの描画順（同じSorting Layer内での前後関係）")]
+    [SerializeField] private int rockSortingOrder = 50;
 
     private Transform target;
     private Animator animator;
@@ -50,6 +54,11 @@ public class Catapult : MonoBehaviour
         characterHealth = GetComponent<CharacterHealth>();
 
         EnsureAimLineRenderer();
+
+        if (rockSprite == null)
+        {
+            Debug.LogWarning("[Catapult] Rock Sprite が未設定です。Inspectorで岩石のスプライトを割り当ててください。");
+        }
     }
 
     void Update()
@@ -164,10 +173,26 @@ public class Catapult : MonoBehaviour
 
         SpriteRenderer sr = rockObj.AddComponent<SpriteRenderer>();
         sr.sprite = rockSprite;
-        sr.sortingOrder = 50;
+
+        // Sorting Layerを明示的に指定する（未指定だとDefaultレイヤーになり、
+        // 地面タイルマップ等の下に隠れて見えなくなることがあるため）
+        if (!string.IsNullOrEmpty(rockSortingLayerName) && SortingLayerExists(rockSortingLayerName))
+        {
+            sr.sortingLayerName = rockSortingLayerName;
+        }
+        sr.sortingOrder = rockSortingOrder;
 
         CatapultRock rock = rockObj.AddComponent<CatapultRock>();
         rock.Init(transform.position, targetPosition, rockFlightDuration, arcHeight, gameObject);
+    }
+
+    private bool SortingLayerExists(string layerName)
+    {
+        foreach (var layer in SortingLayer.layers)
+        {
+            if (layer.name == layerName) return true;
+        }
+        return false;
     }
 
     /// <summary>

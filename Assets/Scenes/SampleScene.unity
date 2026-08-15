@@ -16634,6 +16634,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1490140337}
+  - component: {fileID: 1490140339}
   - component: {fileID: 1490140338}
   - component: {fileID: 1490140336}
   - component: {fileID: 1490140335}
@@ -16641,7 +16642,7 @@ GameObject:
   - component: {fileID: 1490140333}
   m_Layer: 0
   m_Name: "\u30AB\u30BF\u30D1\u30EB\u30C8"
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -16881,6 +16882,28 @@ MonoBehaviour:
   evadeFlickerDuration: 0.15
   shakeDuration: 0.5
   shakeMagnitude: 0.1
+--- !u!114 &1490140339
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1490140332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3e2cfc1714765d43a19251ed481548a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Catapult
+  detectRange: 10
+  maxAttackRange: 0
+  chargeTime: 0.6
+  attackCooldown: 2
+  rockSprite: {fileID: -6193242112592070052, guid: 4306a143afe0fe34097b07c0c634d74e, type: 3}
+  rockFlightDuration: 0.8
+  arcHeight: 2.5
+  rockScale: 0.3
+  aimLineLength: 8
+  aimLineRenderer: {fileID: 0}
 --- !u!4 &1506919063 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8133767935196888266, guid: abba22fc3c201fe468c86352f9318cee, type: 3}
